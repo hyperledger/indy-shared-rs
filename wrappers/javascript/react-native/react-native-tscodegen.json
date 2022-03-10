@@ -1,0 +1,7 @@
+{
+  "libraryName": "IndyCredx",
+  "outputDirectory": "./cpp/generated",
+  "moduleSpecName": "IndyCredx",
+  "generators": ["modulesCxx"],
+  "inputFile": "./src/turboModule.ts"
+}

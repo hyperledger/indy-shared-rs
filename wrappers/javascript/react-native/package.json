@@ -1,0 +1,55 @@
+{
+  "name": "react-native-indy-credx",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "description": "React Native wrapper for Indy Credx",
+  "react-native": "src/index",
+  "source": "src/index",
+  "main": "build/index",
+  "types": "build/index",
+  "homepage": "https://github.com/hyperledger/indy-shared-rs/tree/main/wrappers/javascript/react-native",
+  "author": "Hyperledger (https://github.com/hyperledger)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hyperledger/indy-shared-rs",
+    "directory": "wrappers/javascript/react-native"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src",
+    "build",
+    "lib",
+    "android",
+    "ios",
+    "cpp",
+    "indy-credx-react-native.podspec",
+    "!android/build",
+    "!ios/build"
+  ],
+  "scripts": {
+    "build": "yarn run clean && yarn run compile",
+    "clean": "rimraf -rf ./build",
+    "compile": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "yarn run build",
+    "example": "yarn --cwd example",
+    "tscodegen": "react-native-tscodegen ./react-native-tscodegen.json"
+  },
+  "dependencies": {
+    "buffer": "^6.0.3",
+    "react-native-tscodegen-types": "0.67.3"
+  },
+  "devDependencies": {
+    "react-native-tscodegen": "0.68.4",
+    "@types/react": "17.0.21",
+    "@types/react-native": "0.66.15",
+    "react": "17.0.2",
+    "react-native": "0.66.4",
+    "typescript": "^4.5.5"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  }
+}
