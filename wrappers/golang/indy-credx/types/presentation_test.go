@@ -30,7 +30,7 @@ func Test_NewPresentation(t *testing.T) {
 	presentationReq, err := PresentationRequestFromJSON(testPresentationReqJson)
 	require.Nil(t, err)
 
-	credRevState, err := NewCredentialRevocationState(testRevRegDef, testRevRegDeltaInit, testCredRevInfo, testTimestamp)
+	credRevState, err := NewCredentialRevocationState(testRevRegDef, testRevRegDeltaInit, testCredRevInfo.regIdx, testTimestamp)
 	require.Nil(t, err)
 
 	credentialEntries := []CredentialEntry{{
@@ -68,7 +68,7 @@ func Test_VerifyPresentation(t *testing.T) {
 	presentationReq, err := PresentationRequestFromJSON(testPresentationReqJson)
 	require.Nil(t, err)
 
-	credRevState, err := NewCredentialRevocationState(testRevRegDef, testRevRegDeltaInit, testCredRevInfo, testTimestamp)
+	credRevState, err := NewCredentialRevocationState(testRevRegDef, testRevRegDeltaInit, testCredRevInfo.regIdx, testTimestamp)
 	require.Nil(t, err)
 
 	credentialEntries := []CredentialEntry{{
@@ -148,7 +148,7 @@ func Test_PresentationJson(t *testing.T) {
 	presentationReq, err := PresentationRequestFromJSON(testPresentationReqJson)
 	require.Nil(t, err)
 
-	credRevState, err := NewCredentialRevocationState(testRevRegDef, testRevRegDeltaInit, testCredRevInfo, testTimestamp)
+	credRevState, err := NewCredentialRevocationState(testRevRegDef, testRevRegDeltaInit, testCredRevInfo.regIdx, testTimestamp)
 	require.Nil(t, err)
 
 	credentialEntries := []CredentialEntry{{
@@ -200,7 +200,7 @@ func Test_closePresentation(t *testing.T) {
 	presentationReq, err := PresentationRequestFromJSON(testPresentationReqJson)
 	require.Nil(t, err)
 
-	credRevState, err := NewCredentialRevocationState(testRevRegDef, testRevRegDeltaInit, testCredRevInfo, testTimestamp)
+	credRevState, err := NewCredentialRevocationState(testRevRegDef, testRevRegDeltaInit, testCredRevInfo.regIdx, testTimestamp)
 	require.Nil(t, err)
 
 	credentialEntries := []CredentialEntry{{

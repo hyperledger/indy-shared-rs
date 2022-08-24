@@ -178,7 +178,7 @@ type CredentialRevocationState struct {
 func NewCredentialRevocationState(
 	registryDef *RevocationRegistryDefinition,
 	registryDelta *RevocationRegistryDelta,
-	credRevInfo *CredentialRevocationInfo,
+	credRegIdx int64,
 	timestamp int64,
 ) (*CredentialRevocationState, error) {
 	var handle ObjectHandle
@@ -191,7 +191,7 @@ func NewCredentialRevocationState(
 	err := C.credx_create_or_update_revocation_state(
 		(C.ulong)(registryDef.handle),
 		(C.ulong)(registryDelta.handle),
-		C.int64_t(credRevInfo.regIdx),
+		C.int64_t(credRegIdx),
 		C.int64_t(timestamp),
 		(*C.char)(C.CString(tails)),
 		(C.ulong)(0),
