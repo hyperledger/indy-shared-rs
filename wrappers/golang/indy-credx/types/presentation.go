@@ -21,6 +21,14 @@ type CredentialEntry struct {
 	revState   *CredentialRevocationState
 }
 
+func NewCredentialEntry(credential *Credential, timestamp int64, revState *CredentialRevocationState) *CredentialEntry {
+	return &CredentialEntry{
+		credential: credential,
+		timestamp:  timestamp,
+		revState:   revState,
+	}
+}
+
 func (c *CredentialEntry) ToC() FfiCredentialEntry {
 	return FfiCredentialEntry{
 		credential: (C.ulong)(c.credential.handle),
@@ -34,6 +42,15 @@ type CredentialProve struct {
 	referent    string
 	isPredicate bool
 	reveal      bool
+}
+
+func NewCredentialProve(entryIndex int64, referent string, isPredicate bool, reveal bool) *CredentialProve {
+	return &CredentialProve{
+		entryIndex:  entryIndex,
+		referent:    referent,
+		isPredicate: isPredicate,
+		reveal:      reveal,
+	}
 }
 
 func (c CredentialProve) ToC() FfiCredentialProve {
@@ -55,6 +72,14 @@ func (c CredentialProve) ToC() FfiCredentialProve {
 		reveal:       C.int8_t(cReveal),
 	}
 
+}
+
+func NewRevocationEntry(defEntryIndex int64, revReg *RevocationRegistry, timestamp int64) *RevocationEntry {
+	return &RevocationEntry{
+		defEntryIndex: defEntryIndex,
+		revReg:        revReg,
+		timestamp:     timestamp,
+	}
 }
 
 type RevocationEntry struct {
