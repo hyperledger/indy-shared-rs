@@ -98,6 +98,24 @@ func (s *RevocationRegistry) close() {
 
 type FfiCredentialRevocationInfo C.FfiCredRevInfo
 
+func NewCredentialRevocationInfo(
+	registryDefinition *RevocationRegistryDefinition,
+	regDefinitionPrivate *RevocationRegistryDefinitionPrivate,
+	regEntry *RevocationRegistry,
+	regIdx int64,
+	regUsed []int64,
+	tailsPath string,
+) *CredentialRevocationInfo {
+	return &CredentialRevocationInfo{
+		registryDefinition:   registryDefinition,
+		regDefinitionPrivate: regDefinitionPrivate,
+		regEntry:             regEntry,
+		regIdx:               regIdx,
+		regUsed:              regUsed,
+		tailsPath:            tailsPath,
+	}
+}
+
 type CredentialRevocationInfo struct {
 	registryDefinition   *RevocationRegistryDefinition
 	regDefinitionPrivate *RevocationRegistryDefinitionPrivate
