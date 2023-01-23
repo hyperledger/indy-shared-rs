@@ -20,7 +20,7 @@ from ctypes import (
 )
 from ctypes.util import find_library
 from io import BytesIO
-from typing import Optional, Mapping, Sequence, Union
+from typing import Optional, Mapping, Sequence, Tuple, Union
 
 from .error import CredxError, CredxErrorCode
 
@@ -365,6 +365,7 @@ def _load_library(lib_name: str) -> CDLL:
 def do_call(fn_name, *args):
     """Perform a synchronous library function call."""
     lib_fn = getattr(get_library(), fn_name)
+    lib_fn.restype = c_int64
     result = lib_fn(*args)
     if result:
         raise get_current_error(True)
@@ -505,7 +506,7 @@ def create_credential_definition(
     tag: str,
     signature_type: str,
     support_revocation: bool,
-) -> (ObjectHandle, ObjectHandle, ObjectHandle):
+) -> Tuple[ObjectHandle, ObjectHandle, ObjectHandle]:
     cred_def, cred_def_pvt, key_proof = ObjectHandle(), ObjectHandle(), ObjectHandle()
     do_call(
         "credx_create_credential_definition",
@@ -529,7 +530,7 @@ def create_credential(
     attr_raw_values: Mapping[str, str],
     attr_enc_values: Optional[Mapping[str, str]],
     revocation_config: Optional[RevocationConfig],
-) -> (ObjectHandle, ObjectHandle, ObjectHandle):
+) -> Tuple[ObjectHandle, ObjectHandle, ObjectHandle]:
     cred = ObjectHandle()
     rev_reg = ObjectHandle()
     rev_delta = ObjectHandle()
@@ -597,7 +598,7 @@ def revoke_credential(
     rev_reg: ObjectHandle,
     cred_rev_idx: int,
     tails_path: str,
-) -> (ObjectHandle, ObjectHandle):
+) -> Tuple[ObjectHandle, ObjectHandle]:
     upd_rev_reg = ObjectHandle()
     rev_delta = ObjectHandle()
     do_call(
@@ -632,7 +633,7 @@ def create_credential_request(
     master_secret: ObjectHandle,
     master_secret_id: str,
     cred_offer: ObjectHandle,
-) -> (ObjectHandle, ObjectHandle):
+) -> Tuple[ObjectHandle, ObjectHandle]:
     cred_req, cred_req_metadata = ObjectHandle(), ObjectHandle()
     do_call(
         "credx_create_credential_request",
@@ -721,7 +722,7 @@ def create_revocation_registry(
     issuance_type: Optional[str],
     max_cred_num: int,
     tails_dir_path: Optional[str],
-) -> (ObjectHandle, ObjectHandle, ObjectHandle, ObjectHandle):
+) -> Tuple[ObjectHandle, ObjectHandle, ObjectHandle, ObjectHandle]:
     reg_def = ObjectHandle()
     reg_def_private = ObjectHandle()
     reg_entry = ObjectHandle()
@@ -749,7 +750,7 @@ def update_revocation_registry(
     issued: Sequence[int],
     revoked: Sequence[int],
     tails_path: str,
-) -> (ObjectHandle, ObjectHandle):
+) -> Tuple[ObjectHandle, ObjectHandle]:
     upd_rev_reg = ObjectHandle()
     rev_delta = ObjectHandle()
     do_call(

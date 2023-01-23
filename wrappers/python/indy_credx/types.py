@@ -1,4 +1,4 @@
-from typing import Mapping, Optional, Sequence, Union
+from typing import Mapping, Optional, Sequence, Tuple, Union
 
 from . import bindings
 
@@ -10,12 +10,14 @@ class CredentialDefinition(bindings.IndyObject):
     def create(
         cls,
         origin_did: str,
-        schema: [str, "Schema"],
+        schema: Union[str, "Schema"],
         signature_type: str,
         tag: str,
         *,
         support_revocation: bool = False,
-    ) -> ("CredentialDefinition", "CredentialDefinitionPrivate", "KeyCorrectnessProof"):
+    ) -> Tuple[
+        "CredentialDefinition", "CredentialDefinitionPrivate", "KeyCorrectnessProof"
+    ]:
         if not isinstance(schema, bindings.IndyObject):
             schema = Schema.load(schema)
         cred_def, cred_def_pvt, key_proof = bindings.create_credential_definition(
@@ -79,8 +81,8 @@ class CredentialOffer(bindings.IndyObject):
     def create(
         cls,
         schema_id: str,
-        cred_def: [str, CredentialDefinition],
-        key_proof: [str, KeyCorrectnessProof],
+        cred_def: Union[str, CredentialDefinition],
+        key_proof: Union[str, KeyCorrectnessProof],
     ) -> "CredentialOffer":
         if not isinstance(cred_def, bindings.IndyObject):
             cred_def = CredentialDefinition.load(cred_def)
@@ -104,11 +106,11 @@ class CredentialRequest(bindings.IndyObject):
     def create(
         cls,
         prover_did: str,
-        cred_def: [str, CredentialDefinition],
-        master_secret: [str, "MasterSecret"],
+        cred_def: Union[str, CredentialDefinition],
+        master_secret: Union[str, "MasterSecret"],
         master_secret_id: str,
-        cred_offer: [str, CredentialOffer],
-    ) -> ("CredentialRequest", "CredentialRequestMetadata"):
+        cred_offer: Union[str, CredentialOffer],
+    ) -> Tuple["CredentialRequest", "CredentialRequestMetadata"]:
         if not isinstance(cred_def, bindings.IndyObject):
             cred_def = CredentialDefinition.load(cred_def)
         if not isinstance(master_secret, bindings.IndyObject):
@@ -193,18 +195,18 @@ class Credential(bindings.IndyObject):
     @classmethod
     def create(
         cls,
-        cred_def: [str, CredentialDefinition],
-        cred_def_private: [str, CredentialDefinitionPrivate],
-        cred_offer: [str, CredentialOffer],
-        cred_request: [str, CredentialRequest],
+        cred_def: Union[str, CredentialDefinition],
+        cred_def_private: Union[str, CredentialDefinitionPrivate],
+        cred_offer: Union[str, CredentialOffer],
+        cred_request: Union[str, CredentialRequest],
         attr_raw_values: Mapping[str, str],
         attr_enc_values: Mapping[str, str] = None,
         revocation_config: "CredentialRevocationConfig" = None,
-    ) -> (
+    ) -> Tuple[
         "Credential",
         Optional["RevocationRegistry"],
         Optional["RevocationRegistryDelta"],
-    ):
+    ]:
         if not isinstance(cred_def, bindings.IndyObject):
             cred_def = CredentialDefinition.load(cred_def)
         if not isinstance(cred_def_private, bindings.IndyObject):
@@ -230,9 +232,9 @@ class Credential(bindings.IndyObject):
 
     def process(
         self,
-        cred_req_metadata: [str, CredentialRequestMetadata],
-        master_secret: [str, MasterSecret],
-        cred_def: [str, CredentialDefinition],
+        cred_req_metadata: Union[str, CredentialRequestMetadata],
+        master_secret: Union[str, MasterSecret],
+        cred_def: Union[str, CredentialDefinition],
         rev_reg_def: Optional[Union[str, "RevocationRegistryDefinition"]] = None,
     ) -> "Credential":
         if not isinstance(cred_req_metadata, bindings.IndyObject):
@@ -338,7 +340,7 @@ class PresentCredentials:
         *referents: Sequence[str],
         reveal: bool = True,
         timestamp: int = None,
-        rev_state: [str, "CredentialRevocationState"] = None,
+        rev_state: Union[str, "CredentialRevocationState"] = None,
     ):
         if not referents:
             return
@@ -351,7 +353,7 @@ class PresentCredentials:
         cred: Credential,
         *referents: Sequence[str],
         timestamp: int = None,
-        rev_state: [str, "CredentialRevocationState"] = None,
+        rev_state: Union[str, "CredentialRevocationState"] = None,
     ):
         if not referents:
             return
@@ -364,10 +366,10 @@ class Presentation(bindings.IndyObject):
     @classmethod
     def create(
         cls,
-        pres_req: [str, PresentationRequest],
+        pres_req: Union[str, PresentationRequest],
         present_creds: PresentCredentials,
         self_attest: Optional[Mapping[str, str]],
-        master_secret: [str, MasterSecret],
+        master_secret: Union[str, MasterSecret],
         schemas: Sequence[Union[str, Schema]],
         cred_defs: Sequence[Union[str, CredentialDefinition]],
     ) -> "Presentation":
@@ -425,7 +427,7 @@ class Presentation(bindings.IndyObject):
 
     def verify(
         self,
-        pres_req: [str, PresentationRequest],
+        pres_req: Union[str, PresentationRequest],
         schemas: Sequence[Union[str, Schema]],
         cred_defs: Sequence[Union[str, CredentialDefinition]],
         rev_reg_defs: Sequence[Union[str, "RevocationRegistryDefinition"]] = None,
@@ -481,19 +483,19 @@ class RevocationRegistryDefinition(bindings.IndyObject):
     def create(
         cls,
         origin_did: str,
-        cred_def: [str, CredentialDefinition],
+        cred_def: Union[str, CredentialDefinition],
         tag: str,
         registry_type: str,
         max_cred_num: int,
         *,
         issuance_type: str = None,
         tails_dir_path: str = None,
-    ) -> (
+    ) -> Tuple[
         "RevocationRegistryDefinition",
         "RevocationRegistryDefinitionPrivate",
         "RevocationRegistry",
         "RevocationRegistryDelta",
-    ):
+    ]:
         if not isinstance(cred_def, bindings.IndyObject):
             cred_def = CredentialDefinition.load(cred_def)
         (
@@ -591,7 +593,7 @@ class RevocationRegistry(bindings.IndyObject):
 
     def revoke_credential(
         self,
-        rev_reg_def: [str, RevocationRegistryDefinition],
+        rev_reg_def: Union[str, RevocationRegistryDefinition],
         cred_rev_idx: int,
         tails_path: str,
     ) -> "RevocationRegistryDelta":
@@ -604,7 +606,7 @@ class RevocationRegistry(bindings.IndyObject):
 
     def update(
         self,
-        rev_reg_def: [str, RevocationRegistryDefinition],
+        rev_reg_def: Union[str, RevocationRegistryDefinition],
         issued: Sequence[int],
         revoked: Sequence[int],
         tails_path: str,
@@ -629,7 +631,7 @@ class RevocationRegistryDelta(bindings.IndyObject):
         )
 
     def update_with(
-        self, next_delta: [str, "RevocationRegistryDelta"]
+        self, next_delta: Union[str, "RevocationRegistryDelta"]
     ) -> "RevocationRegistryDelta":
         if not isinstance(next_delta, bindings.IndyObject):
             next_delta = RevocationRegistryDelta.load(next_delta)
@@ -641,9 +643,9 @@ class RevocationRegistryDelta(bindings.IndyObject):
 class CredentialRevocationConfig:
     def __init__(
         self,
-        rev_reg_def: [str, "RevocationRegistryDefinition"] = None,
-        rev_reg_def_private: [str, "RevocationRegistryDefinitionPrivate"] = None,
-        rev_reg: [str, "RevocationRegistry"] = None,
+        rev_reg_def: Union[str, "RevocationRegistryDefinition"] = None,
+        rev_reg_def_private: Union[str, "RevocationRegistryDefinitionPrivate"] = None,
+        rev_reg: Union[str, "RevocationRegistry"] = None,
         rev_reg_index: int = None,
         rev_reg_used: Sequence[int] = None,
         tails_path: str = None,
@@ -679,8 +681,8 @@ class CredentialRevocationState(bindings.IndyObject):
     @classmethod
     def create(
         cls,
-        rev_reg_def: [str, RevocationRegistryDefinition],
-        rev_reg_delta: [str, RevocationRegistryDelta],
+        rev_reg_def: Union[str, RevocationRegistryDefinition],
+        rev_reg_delta: Union[str, RevocationRegistryDelta],
         cred_rev_id: int,
         timestamp: int,
         tails_path: str,
@@ -710,8 +712,8 @@ class CredentialRevocationState(bindings.IndyObject):
 
     def update(
         self,
-        rev_reg_def: [str, RevocationRegistryDefinition],
-        rev_reg_delta: [str, RevocationRegistryDelta],
+        rev_reg_def: Union[str, RevocationRegistryDefinition],
+        rev_reg_delta: Union[str, RevocationRegistryDelta],
         rev_reg_index: int,
         timestamp: int,
         tails_path: str,
