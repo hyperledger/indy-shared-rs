@@ -1,132 +1,230 @@
-name: "Build Packages"
+name: "Indy-VDR"
 
-"on":
+env:
+  RUST_VERSION: "1.60.0"
+  CROSS_VERSION: "0.2.4"
+  OPENSSL_STATIC: 1
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
   release:
     types: [created]
   workflow_dispatch:
     inputs:
-      publish:
-        description: "Publish packages"
+      publish-binaries:
+        description: "Publish Binaries to Release (will create a release if no release exists for branch or tag)"
         required: true
-        default: "false"
+        default: false
+        type: boolean
+      publish-wrappers:
+        description: "Publish Wrappers to Registries"
+        required: true
+        default: false
+        type: boolean
 
 jobs:
-  build-manylinux:
-    name: Build Library (Manylinux)
+  checks:
+    name: Run checks
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          components: clippy, rustfmt
+
+      - name: Cache cargo resources
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: deps
+          cache-on-failure: true
+
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: Cargo check
+        run: cargo check --workspace --features vendored
+
+      - if: "runner.os == 'Linux'"
+        name: Pre-install cross
+        run: |
+          cargo install --bins --git https://github.com/rust-embedded/cross --tag v${{ env.CROSS_VERSION }} cross
+
+  tests:
+    name: Run tests
+    needs: [checks]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+
+      - name: Cache cargo resources
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: deps
+          save-if: false
+
+      - name: Debug build
+        run: cargo build --all-targets --features vendored
+
+      - name: Test indy-utils
+        run: cargo test --manifest-path indy-utils/Cargo.toml
+
+      - name: Test indy-data-types (CL)
+        run: cargo test --manifest-path indy-data-types/Cargo.toml --features cl
+
+      - name: Test indy-data-types (CL-native)
+        run: cargo test --manifest-path indy-data-types/Cargo.toml --features cl_native,vendored
+
+      - name: Test indy-credx (vendored)
+        run: cargo test --manifest-path indy-credx/Cargo.toml --features vendored
+
+  build-release:
+    name: Build library
+    needs: [checks]
 
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
+          - architecture: linux-aarch64
+            os: ubuntu-latest
             lib: libindy_credx.so
-            container: andrewwhitehead/manylinux2014-base
-
-    container: ${{ matrix.container }}
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-
-      - name: Cache cargo resources
-        uses: Swatinem/rust-cache@v1
-
-      - name: Build library
-        env:
-          BUILD_FEATURES: vendored
-          BUILD_TARGET: ${{ matrix.target }}
-        run: sh ./build.sh
-
-      - name: Upload library artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: library-${{ runner.os }}
-          path: target/release/${{ matrix.lib }}
-
-  build-other:
-    name: Build Library (MacOS/Win)
-
-    strategy:
-      matrix:
-        include:
-          - os: macos-11
+            target: aarch64-unknown-linux-gnu
+            use_cross: true
+          - architecture: linux-x86_64
+            os: ubuntu-latest
+            lib: libindy_credx.so
+            target: x86_64-unknown-linux-gnu
+            use_cross: true
+          - architecture: darwin-universal
+            os: macos-latest
             lib: libindy_credx.dylib
-            target: apple-darwin
-            toolchain: beta # beta required for Darwin build
-          - os: windows-latest
+            target: darwin-universal
+            # beta or nightly required for aarch64-apple-darwin target
+            toolchain: beta
+          - architecture: windows-x86_64
+            os: windows-latest
             lib: indy_credx.dll
-            toolchain: stable
+            target: x86_64-pc-windows-msvc
 
     runs-on: ${{ matrix.os }}
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
-          toolchain: ${{ matrix.toolchain }}
+          toolchain: ${{ matrix.toolchain || env.RUST_VERSION }}
 
       - name: Cache cargo resources
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: deps
+          save-if: false
 
-      # pre-build so that openssl dependency is cached, otherwise it will complain:
+      - if: ${{ matrix.use_cross }}
+        name: Build (cross)
+        run: |
+          cargo install --bins --git https://github.com/rust-embedded/cross --tag v${{ env.CROSS_VERSION }} cross
+          cross build --lib --release --package indy-credx --target ${{ matrix.target }} --features vendored
+
+      - if: ${{ !matrix.use_cross && matrix.architecture == 'darwin-universal' }}
+        name: Build (mac)
+        run: BUILD_FEATURES=vendored ./build-universal.sh
+
+      # Requires using the default shell on Windows, otherwise it will complain:
       # "This perl implementation doesn't produce Windows like paths"
-      - if: "runner.os == 'Windows'"
-        name: Pre-build (Windows)
-        uses: actions-rs/cargo@v1
-        env:
-          OPENSSL_STATIC: 1
-        with:
-          command: build
-          args: --release --manifest-path indy-credx/Cargo.toml --features vendored
+      - if: ${{ !matrix.use_cross && matrix.architecture != 'darwin-universal' }}
+        name: Build (standard)
+        run: |
+          cargo build --lib --release --package indy-credx --target ${{ matrix.target }} --features vendored
 
-      - name: Build library
-        env:
-          BUILD_FEATURES: vendored
-          BUILD_TARGET: ${{ matrix.target }}
-          BUILD_TOOLCHAIN: ${{ matrix.toolchain }}
-          OPENSSL_STATIC: 1
-        run: sh ./build.sh
-
-      - name: Upload library artifacts
-        uses: actions/upload-artifact@v2
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
         with:
-          name: library-${{ runner.os }}
-          path: target/release/${{ matrix.lib }}
+          name: library-${{ matrix.architecture }}
+          path: target/${{ matrix.target }}/release/${{ matrix.lib }}
+
+      - name: Create artifacts directory
+        if: |
+          github.event_name == 'release' ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.publish-binaries == 'true')
+        run: |
+          mkdir release-artifacts
+          cp target/${{ matrix.target }}/release/${{ matrix.lib }} release-artifacts/
+
+      - uses: a7ul/tar-action@v1.1.2
+        if: |
+          github.event_name == 'release' ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.publish-binaries == 'true')
+        with:
+          command: c
+          cwd: release-artifacts
+          files: .
+          outPath: "library-${{ matrix.architecture }}.tar.gz"
+
+      - name: Add artifacts to release
+        if: |
+          github.event_name == 'release' ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.publish-binaries == 'true')
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file: library-${{ matrix.architecture }}.tar.gz
+          asset_name: "library-${{ matrix.architecture }}.tar.gz"
 
   build-py:
-    name: Build Python
-    needs: [build-manylinux, build-other]
+    name: Build and test Python wrapper
+    needs: [build-release]
 
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-11, windows-latest]
-        python-version: [3.6]
+        architecture:
+          [linux-aarch64, linux-x86_64, darwin-universal, windows-x86_64]
+        python-version: ["3.8"]
         include:
           - os: ubuntu-latest
+            architecture: linux-aarch64
+            plat-name: manylinux2014_aarch64
+          - os: ubuntu-latest
+            architecture: linux-x86_64
             plat-name: manylinux2014_x86_64
-          - os: macos-11
+          - os: macos-latest
+            architecture: darwin-universal
             plat-name: macosx_10_9_universal2 # macosx_10_9_x86_64
           - os: windows-latest
+            architecture: windows-x86_64
             plat-name: win_amd64
 
     runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -136,41 +234,41 @@ jobs:
           pip install setuptools wheel twine auditwheel
 
       - name: Fetch library artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
-          name: library-${{ runner.os }}
+          name: library-${{ matrix.architecture }}
           path: wrappers/python/indy_credx/
 
-      - name: Build python package
+      - name: Build wheel package
+        shell: sh
         run: |
           python setup.py bdist_wheel --python-tag=py3 --plat-name=${{ matrix.plat-name }}
         working-directory: wrappers/python
 
-      - name: Test python package
-        shell: sh
-        run: |
-          cd wrappers/python
-          pip install --upgrade pip
-          pip install dist/*
-          python -m demo.test
+      - name: Run tests
+        # FIXME cross platform test the python package
+        # maybe use the cross docker image?
+        if: "matrix.architecture != 'linux-aarch64'"
+        run: python -m demo.test
+        working-directory: wrappers/python
+        env:
+          no_proxy: "*" # python issue 30385
+          RUST_BACKTRACE: full
+          # RUST_LOG: debug
 
       - if: "runner.os == 'Linux'"
-        name: Auditwheel
-        run: auditwheel show wrappers/python/dist/*
-
-      - name: Upload python package
-        uses: actions/upload-artifact@v2
-        with:
-          name: python-${{ runner.os }}
-          path: wrappers/python/dist/*
+        name: Audit wheel
+        run: |
+          auditwheel show wrappers/python/dist/* | tee auditwheel.log
+          grep -q manylinux_2_17_ auditwheel.log
 
       - if: |
-          (github.event_name == 'release' ||
-            (github.event_name == 'workflow_dispatch' &&
-             github.event.inputs.publish == 'true'))
-        name: Publish python package
+          github.event_name == 'release' ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.publish-wrappers == 'true')
+        name: Publish
         env:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
-          twine upload --skip-existing wrappers/python/dist/*
+          twine upload --skip-existing dist/*
+        working-directory: wrappers/python
