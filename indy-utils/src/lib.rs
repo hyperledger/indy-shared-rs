@@ -39,7 +39,3 @@ pub mod hash;
 /// Generation of normalized ledger transaction for signing
 #[cfg(feature = "txn_signature")]
 pub mod txn_signature;
-
-/// Wallet query language
-#[cfg(feature = "wql")]
-pub use indy_wql as wql;

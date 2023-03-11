@@ -8,14 +8,14 @@ use serde_json::Value;
 
 use super::credential::Credential;
 use super::nonce::Nonce;
+use super::wql::Query;
+use crate::did::DidValue;
 use crate::identifiers::cred_def::CredentialDefinitionId;
 use crate::identifiers::rev_reg::RevocationRegistryId;
 use crate::identifiers::schema::SchemaId;
+use crate::invalid;
 use crate::utils::{qualifiable, Qualifiable};
 use crate::{Validatable, ValidationError};
-use indy_utils::did::DidValue;
-use indy_utils::invalid;
-use indy_utils::wql::Query;
 
 #[derive(Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]

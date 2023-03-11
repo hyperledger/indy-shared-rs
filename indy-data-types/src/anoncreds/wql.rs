@@ -1,7 +1,5 @@
 //! Indy WQL (wallet query language) parsing and optimization
 
-#![deny(missing_debug_implementations, missing_docs, rust_2018_idioms)]
-
 /// An abstract query representation over a key and value type
 #[derive(Debug, Hash, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum AbstractQuery<K, V> {
