@@ -393,7 +393,7 @@ class Presentation(bindings.IndyObject):
                 entry_idx = len(creds)
                 creds.append(
                     bindings.CredentialEntry.create(
-                        cred.handle, timestamp, rev_state and rev_state.handle
+                        cred, timestamp, rev_state and rev_state
                     )
                 )
                 for (reft, reveal) in attrs:
@@ -453,12 +453,12 @@ class Presentation(bindings.IndyObject):
                 reg_def = RevocationRegistryDefinition.load(reg_def)
             reg_def_id = reg_def.id
             if rev_reg_entries and reg_def_id in rev_reg_entries:
-                for timestamp, entry in rev_reg_entries[reg_def_id].items():
-                    if not isinstance(entry, bindings.IndyObject):
-                        entry = RevocationRegistry.load(entry)
+                for timestamp, registry in rev_reg_entries[reg_def_id].items():
+                    if not isinstance(registry, bindings.IndyObject):
+                        registry = RevocationRegistry.load(registry)
                     reg_entries.append(
                         bindings.RevocationEntry.create(
-                            len(reg_defs), entry.handle, timestamp
+                            len(reg_defs), registry, timestamp
                         )
                     )
             reg_defs.append(reg_def.handle)
@@ -661,9 +661,9 @@ class CredentialRevocationConfig:
     @property
     def _native(self) -> bindings.RevocationConfig:
         return bindings.RevocationConfig.create(
-            self.rev_reg_def.handle,
-            self.rev_reg_def_private.handle,
-            self.rev_reg.handle,
+            self.rev_reg_def,
+            self.rev_reg_def_private,
+            self.rev_reg,
             self.rev_reg_index,
             self.rev_reg_used,
             self.tails_path,
