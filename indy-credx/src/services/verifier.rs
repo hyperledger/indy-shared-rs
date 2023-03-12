@@ -11,8 +11,8 @@ use indy_data_types::anoncreds::{
     nonce::Nonce,
     pres_request::{AttributeInfo, NonRevocedInterval, PredicateInfo, PresentationRequestPayload},
     presentation::{Identifier, RequestedProof, RevealedAttributeInfo},
+    wql::Query,
 };
-use indy_utils::wql::Query;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Filter {

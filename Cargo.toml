@@ -4,10 +4,10 @@ members = [
     "indy-credx",
     "indy-data-types",
     "indy-test-utils",
-    "indy-utils",
-    "indy-wql"
+    "indy-utils"
 ]
 
 [profile.release]
+panic = "abort"
 lto = true
 codegen-units = 1

@@ -188,21 +188,6 @@ impl<'a, 'p> AddCredential<'a, 'p> {
     }
 }
 
-#[derive(Debug)]
-pub(crate) struct RequestedAttribute<'a> {
-    pub cred_id: String,
-    pub timestamp: Option<u64>,
-    pub revealed: bool,
-    pub rev_state: Option<&'a CredentialRevocationState>,
-}
-
-#[derive(Debug)]
-pub(crate) struct RequestedPredicate<'a> {
-    pub cred_id: String,
-    pub timestamp: Option<u64>,
-    pub rev_state: Option<&'a CredentialRevocationState>,
-}
-
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct ProvingCredentialKey {
     pub cred_id: String,

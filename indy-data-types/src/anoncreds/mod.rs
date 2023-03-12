@@ -38,3 +38,5 @@ pub mod rich_schema;
 
 /// V1 credential schemas
 pub mod schema;
+
+pub mod wql;
