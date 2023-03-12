@@ -30,6 +30,9 @@ LIB: CDLL = None
 LOGGER = logging.getLogger(__name__)
 
 
+JsonType = Union[dict, str, bytes, memoryview]
+
+
 class ObjectHandle(c_int64):
     """Index of an active IndyObject instance."""
 
@@ -455,7 +458,7 @@ def object_get_type_name(handle: ObjectHandle) -> StrBuffer:
     return result
 
 
-def _object_from_json(method: str, value: Union[dict, str, bytes]) -> ObjectHandle:
+def _object_from_json(method: str, value: JsonType) -> ObjectHandle:
     if isinstance(value, dict):
         value = json.dumps(value)
     result = ObjectHandle()

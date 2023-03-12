@@ -1,6 +1,7 @@
 from typing import Mapping, Optional, Sequence, Tuple, Union
 
 from . import bindings
+from .bindings import JsonType
 
 
 class CredentialDefinition(bindings.IndyObject):
@@ -10,7 +11,7 @@ class CredentialDefinition(bindings.IndyObject):
     def create(
         cls,
         origin_did: str,
-        schema: Union[str, "Schema"],
+        schema: Union[JsonType, "Schema"],
         signature_type: str,
         tag: str,
         *,
@@ -30,7 +31,7 @@ class CredentialDefinition(bindings.IndyObject):
         )
 
     @classmethod
-    def load(cls, value: Union[dict, str, bytes, memoryview]) -> "CredentialDefinition":
+    def load(cls, value: JsonType) -> "CredentialDefinition":
         return CredentialDefinition(
             bindings._object_from_json("credx_credential_definition_from_json", value)
         )
@@ -58,9 +59,7 @@ class CredentialDefinition(bindings.IndyObject):
 
 class CredentialDefinitionPrivate(bindings.IndyObject):
     @classmethod
-    def load(
-        cls, value: Union[dict, str, bytes, memoryview]
-    ) -> "CredentialDefinitionPrivate":
+    def load(cls, value: JsonType) -> "CredentialDefinitionPrivate":
         return CredentialDefinitionPrivate(
             bindings._object_from_json(
                 "credx_credential_definition_private_from_json", value
@@ -70,7 +69,7 @@ class CredentialDefinitionPrivate(bindings.IndyObject):
 
 class KeyCorrectnessProof(bindings.IndyObject):
     @classmethod
-    def load(cls, value: Union[dict, str, bytes, memoryview]) -> "KeyCorrectnessProof":
+    def load(cls, value: JsonType) -> "KeyCorrectnessProof":
         return KeyCorrectnessProof(
             bindings._object_from_json("credx_key_correctness_proof_from_json", value)
         )
@@ -81,8 +80,8 @@ class CredentialOffer(bindings.IndyObject):
     def create(
         cls,
         schema_id: str,
-        cred_def: Union[str, CredentialDefinition],
-        key_proof: Union[str, KeyCorrectnessProof],
+        cred_def: Union[JsonType, CredentialDefinition],
+        key_proof: Union[JsonType, KeyCorrectnessProof],
     ) -> "CredentialOffer":
         if not isinstance(cred_def, bindings.IndyObject):
             cred_def = CredentialDefinition.load(cred_def)
@@ -95,7 +94,7 @@ class CredentialOffer(bindings.IndyObject):
         )
 
     @classmethod
-    def load(cls, value: Union[dict, str, bytes, memoryview]) -> "CredentialOffer":
+    def load(cls, value: JsonType) -> "CredentialOffer":
         return CredentialOffer(
             bindings._object_from_json("credx_credential_offer_from_json", value)
         )
@@ -106,10 +105,10 @@ class CredentialRequest(bindings.IndyObject):
     def create(
         cls,
         prover_did: str,
-        cred_def: Union[str, CredentialDefinition],
-        master_secret: Union[str, "MasterSecret"],
+        cred_def: Union[JsonType, CredentialDefinition],
+        master_secret: Union[JsonType, "MasterSecret"],
         master_secret_id: str,
-        cred_offer: Union[str, CredentialOffer],
+        cred_offer: Union[JsonType, CredentialOffer],
     ) -> Tuple["CredentialRequest", "CredentialRequestMetadata"]:
         if not isinstance(cred_def, bindings.IndyObject):
             cred_def = CredentialDefinition.load(cred_def)
@@ -127,7 +126,7 @@ class CredentialRequest(bindings.IndyObject):
         return CredentialRequest(cred_def), CredentialRequestMetadata(cred_def_metadata)
 
     @classmethod
-    def load(cls, value: Union[dict, str, bytes, memoryview]) -> "CredentialRequest":
+    def load(cls, value: JsonType) -> "CredentialRequest":
         return CredentialRequest(
             bindings._object_from_json("credx_credential_request_from_json", value)
         )
@@ -135,9 +134,7 @@ class CredentialRequest(bindings.IndyObject):
 
 class CredentialRequestMetadata(bindings.IndyObject):
     @classmethod
-    def load(
-        cls, value: Union[dict, str, bytes, memoryview]
-    ) -> "CredentialRequestMetadata":
+    def load(cls, value: JsonType) -> "CredentialRequestMetadata":
         return CredentialRequestMetadata(
             bindings._object_from_json(
                 "credx_credential_request_metadata_from_json", value
@@ -151,7 +148,7 @@ class MasterSecret(bindings.IndyObject):
         return MasterSecret(bindings.create_master_secret())
 
     @classmethod
-    def load(cls, value: Union[dict, str, bytes, memoryview]) -> "MasterSecret":
+    def load(cls, value: JsonType) -> "MasterSecret":
         return MasterSecret(
             bindings._object_from_json("credx_master_secret_from_json", value)
         )
@@ -175,7 +172,7 @@ class Schema(bindings.IndyObject):
         )
 
     @classmethod
-    def load(cls, value: Union[dict, str, bytes, memoryview]) -> "Schema":
+    def load(cls, value: JsonType) -> "Schema":
         return Schema(bindings._object_from_json("credx_schema_from_json", value))
 
     @property
@@ -195,10 +192,10 @@ class Credential(bindings.IndyObject):
     @classmethod
     def create(
         cls,
-        cred_def: Union[str, CredentialDefinition],
-        cred_def_private: Union[str, CredentialDefinitionPrivate],
-        cred_offer: Union[str, CredentialOffer],
-        cred_request: Union[str, CredentialRequest],
+        cred_def: Union[JsonType, CredentialDefinition],
+        cred_def_private: Union[JsonType, CredentialDefinitionPrivate],
+        cred_offer: Union[JsonType, CredentialOffer],
+        cred_request: Union[JsonType, CredentialRequest],
         attr_raw_values: Mapping[str, str],
         attr_enc_values: Mapping[str, str] = None,
         revocation_config: "CredentialRevocationConfig" = None,
@@ -232,10 +229,10 @@ class Credential(bindings.IndyObject):
 
     def process(
         self,
-        cred_req_metadata: Union[str, CredentialRequestMetadata],
-        master_secret: Union[str, MasterSecret],
-        cred_def: Union[str, CredentialDefinition],
-        rev_reg_def: Optional[Union[str, "RevocationRegistryDefinition"]] = None,
+        cred_req_metadata: Union[JsonType, CredentialRequestMetadata],
+        master_secret: Union[JsonType, MasterSecret],
+        cred_def: Union[JsonType, CredentialDefinition],
+        rev_reg_def: Optional[Union[JsonType, "RevocationRegistryDefinition"]] = None,
     ) -> "Credential":
         if not isinstance(cred_req_metadata, bindings.IndyObject):
             cred_req_metadata = CredentialRequestMetadata.load(cred_req_metadata)
@@ -256,7 +253,7 @@ class Credential(bindings.IndyObject):
         )
 
     @classmethod
-    def load(cls, value: Union[dict, str, bytes, memoryview]) -> "Credential":
+    def load(cls, value: JsonType) -> "Credential":
         return Credential(
             bindings._object_from_json("credx_credential_from_json", value)
         )
@@ -303,7 +300,7 @@ class Credential(bindings.IndyObject):
 
 class PresentationRequest(bindings.IndyObject):
     @classmethod
-    def load(cls, value: Union[dict, str, bytes, memoryview]) -> "PresentationRequest":
+    def load(cls, value: JsonType) -> "PresentationRequest":
         return PresentationRequest(
             bindings._object_from_json("credx_presentation_request_from_json", value)
         )
@@ -340,7 +337,7 @@ class PresentCredentials:
         *referents: Sequence[str],
         reveal: bool = True,
         timestamp: int = None,
-        rev_state: Union[str, "CredentialRevocationState"] = None,
+        rev_state: Union[JsonType, "CredentialRevocationState"] = None,
     ):
         if not referents:
             return
@@ -353,7 +350,7 @@ class PresentCredentials:
         cred: Credential,
         *referents: Sequence[str],
         timestamp: int = None,
-        rev_state: Union[str, "CredentialRevocationState"] = None,
+        rev_state: Union[JsonType, "CredentialRevocationState"] = None,
     ):
         if not referents:
             return
@@ -366,12 +363,12 @@ class Presentation(bindings.IndyObject):
     @classmethod
     def create(
         cls,
-        pres_req: Union[str, PresentationRequest],
+        pres_req: Union[JsonType, PresentationRequest],
         present_creds: PresentCredentials,
         self_attest: Optional[Mapping[str, str]],
-        master_secret: Union[str, MasterSecret],
-        schemas: Sequence[Union[str, Schema]],
-        cred_defs: Sequence[Union[str, CredentialDefinition]],
+        master_secret: Union[JsonType, MasterSecret],
+        schemas: Sequence[Union[JsonType, Schema]],
+        cred_defs: Sequence[Union[JsonType, CredentialDefinition]],
     ) -> "Presentation":
         if not isinstance(pres_req, bindings.IndyObject):
             pres_req = PresentationRequest.load(pres_req)
@@ -420,19 +417,19 @@ class Presentation(bindings.IndyObject):
         )
 
     @classmethod
-    def load(cls, value: Union[dict, str, bytes, memoryview]) -> "Presentation":
+    def load(cls, value: JsonType) -> "Presentation":
         return Presentation(
             bindings._object_from_json("credx_presentation_from_json", value)
         )
 
     def verify(
         self,
-        pres_req: Union[str, PresentationRequest],
-        schemas: Sequence[Union[str, Schema]],
-        cred_defs: Sequence[Union[str, CredentialDefinition]],
-        rev_reg_defs: Sequence[Union[str, "RevocationRegistryDefinition"]] = None,
+        pres_req: Union[JsonType, PresentationRequest],
+        schemas: Sequence[Union[JsonType, Schema]],
+        cred_defs: Sequence[Union[JsonType, CredentialDefinition]],
+        rev_reg_defs: Sequence[Union[JsonType, "RevocationRegistryDefinition"]] = None,
         rev_reg_entries: Mapping[
-            str, Mapping[int, Union[str, "RevocationRegistry"]]
+            str, Mapping[int, Union[JsonType, "RevocationRegistry"]]
         ] = None,
     ) -> bool:
         if not isinstance(pres_req, bindings.IndyObject):
@@ -483,7 +480,7 @@ class RevocationRegistryDefinition(bindings.IndyObject):
     def create(
         cls,
         origin_did: str,
-        cred_def: Union[str, CredentialDefinition],
+        cred_def: Union[JsonType, CredentialDefinition],
         tag: str,
         registry_type: str,
         max_cred_num: int,
@@ -520,9 +517,7 @@ class RevocationRegistryDefinition(bindings.IndyObject):
         )
 
     @classmethod
-    def load(
-        cls, value: Union[dict, str, bytes, memoryview]
-    ) -> "RevocationRegistryDefinition":
+    def load(cls, value: JsonType) -> "RevocationRegistryDefinition":
         return RevocationRegistryDefinition(
             bindings._object_from_json(
                 "credx_revocation_registry_definition_from_json", value
@@ -574,9 +569,7 @@ class RevocationRegistryDefinition(bindings.IndyObject):
 
 class RevocationRegistryDefinitionPrivate(bindings.IndyObject):
     @classmethod
-    def load(
-        cls, value: Union[dict, str, bytes, memoryview]
-    ) -> "RevocationRegistryDefinitionPrivate":
+    def load(cls, value: JsonType) -> "RevocationRegistryDefinitionPrivate":
         return RevocationRegistryDefinitionPrivate(
             bindings._object_from_json(
                 "credx_revocation_registry_definition_private_from_json", value
@@ -586,14 +579,14 @@ class RevocationRegistryDefinitionPrivate(bindings.IndyObject):
 
 class RevocationRegistry(bindings.IndyObject):
     @classmethod
-    def load(cls, value: Union[dict, str, bytes, memoryview]) -> "RevocationRegistry":
+    def load(cls, value: JsonType) -> "RevocationRegistry":
         return RevocationRegistry(
             bindings._object_from_json("credx_revocation_registry_from_json", value)
         )
 
     def revoke_credential(
         self,
-        rev_reg_def: Union[str, RevocationRegistryDefinition],
+        rev_reg_def: Union[JsonType, RevocationRegistryDefinition],
         cred_rev_idx: int,
         tails_path: str,
     ) -> "RevocationRegistryDelta":
@@ -606,7 +599,7 @@ class RevocationRegistry(bindings.IndyObject):
 
     def update(
         self,
-        rev_reg_def: Union[str, RevocationRegistryDefinition],
+        rev_reg_def: Union[JsonType, RevocationRegistryDefinition],
         issued: Sequence[int],
         revoked: Sequence[int],
         tails_path: str,
@@ -621,9 +614,7 @@ class RevocationRegistry(bindings.IndyObject):
 
 class RevocationRegistryDelta(bindings.IndyObject):
     @classmethod
-    def load(
-        cls, value: Union[dict, str, bytes, memoryview]
-    ) -> "RevocationRegistryDelta":
+    def load(cls, value: JsonType) -> "RevocationRegistryDelta":
         return RevocationRegistryDelta(
             bindings._object_from_json(
                 "credx_revocation_registry_delta_from_json", value
@@ -631,7 +622,7 @@ class RevocationRegistryDelta(bindings.IndyObject):
         )
 
     def update_with(
-        self, next_delta: Union[str, "RevocationRegistryDelta"]
+        self, next_delta: Union[JsonType, "RevocationRegistryDelta"]
     ) -> "RevocationRegistryDelta":
         if not isinstance(next_delta, bindings.IndyObject):
             next_delta = RevocationRegistryDelta.load(next_delta)
@@ -643,9 +634,11 @@ class RevocationRegistryDelta(bindings.IndyObject):
 class CredentialRevocationConfig:
     def __init__(
         self,
-        rev_reg_def: Union[str, "RevocationRegistryDefinition"] = None,
-        rev_reg_def_private: Union[str, "RevocationRegistryDefinitionPrivate"] = None,
-        rev_reg: Union[str, "RevocationRegistry"] = None,
+        rev_reg_def: Union[JsonType, "RevocationRegistryDefinition"] = None,
+        rev_reg_def_private: Union[
+            JsonType, "RevocationRegistryDefinitionPrivate"
+        ] = None,
+        rev_reg: Union[JsonType, "RevocationRegistry"] = None,
         rev_reg_index: int = None,
         rev_reg_used: Sequence[int] = None,
         tails_path: str = None,
@@ -681,8 +674,8 @@ class CredentialRevocationState(bindings.IndyObject):
     @classmethod
     def create(
         cls,
-        rev_reg_def: Union[str, RevocationRegistryDefinition],
-        rev_reg_delta: Union[str, RevocationRegistryDelta],
+        rev_reg_def: Union[JsonType, RevocationRegistryDefinition],
+        rev_reg_delta: Union[JsonType, RevocationRegistryDelta],
         cred_rev_id: int,
         timestamp: int,
         tails_path: str,
@@ -703,17 +696,15 @@ class CredentialRevocationState(bindings.IndyObject):
         )
 
     @classmethod
-    def load(
-        cls, value: Union[dict, str, bytes, memoryview]
-    ) -> "CredentialRevocationState":
+    def load(cls, value: JsonType) -> "CredentialRevocationState":
         return CredentialRevocationState(
             bindings._object_from_json("credx_revocation_state_from_json", value)
         )
 
     def update(
         self,
-        rev_reg_def: Union[str, RevocationRegistryDefinition],
-        rev_reg_delta: Union[str, RevocationRegistryDelta],
+        rev_reg_def: Union[JsonType, RevocationRegistryDefinition],
+        rev_reg_delta: Union[JsonType, RevocationRegistryDelta],
         rev_reg_index: int,
         timestamp: int,
         tails_path: str,
