@@ -448,7 +448,7 @@ class Presentation(bindings.IndyObject):
         ]
         reg_defs = []
         reg_entries = []
-        for reg_def in rev_reg_defs:
+        for reg_def in rev_reg_defs or ():
             if not isinstance(reg_def, bindings.IndyObject):
                 reg_def = RevocationRegistryDefinition.load(reg_def)
             reg_def_id = reg_def.id
