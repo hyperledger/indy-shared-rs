@@ -146,7 +146,7 @@ impl TailsFileWriter {
         Self {
             root_path: root_path
                 .map(PathBuf::from)
-                .unwrap_or_else(|| std::env::temp_dir()),
+                .unwrap_or_else(std::env::temp_dir),
         }
     }
 }
@@ -161,21 +161,25 @@ impl TailsWriter for TailsFileWriter {
             pub fn rename(self, target: &Path) -> Result<(), Error> {
                 let path = std::mem::ManuallyDrop::new(self).0;
                 std::fs::rename(path, target)
-                    .map_err(|e| err_msg!("Error moving tails temp file: {}", e))
+                    .map_err(|e| err_msg!("Error moving tails temp file {path:?}: {e}"))
             }
         }
         impl Drop for TempFile<'_> {
             fn drop(&mut self) {
                 if let Err(e) = std::fs::remove_file(self.0) {
-                    error!("Error removing tails temp file: {}", e);
+                    error!("Error removing tails temp file {:?}: {e}", self.0);
                 }
             }
         }
 
         let temp_name = format!("{:020}.tmp", random::<u64>());
         let temp_path = self.root_path.with_file_name(temp_name);
-        let file = File::create(temp_path.clone())
-            .map_err(|e| err_msg!(IOError, "Error creating tails temp file: {}", e))?;
+        let file = File::options()
+            .read(true)
+            .write(true)
+            .create_new(true)
+            .open(temp_path.clone())
+            .map_err(|e| err_msg!(IOError, "Error creating tails temp file {temp_path:?}: {e}"))?;
         let temp_handle = TempFile(&temp_path);
         let mut buf = BufWriter::new(file);
         let mut hasher = Sha256::default();
@@ -189,7 +193,7 @@ impl TailsWriter for TailsFileWriter {
         }
         let mut file = buf
             .into_inner()
-            .map_err(|err| err_msg!("Error flushing output file: {}", err))?;
+            .map_err(|e| err_msg!("Error flushing output file: {e}"))?;
         let tails_size = file.seek(SeekFrom::Current(0))?;
         let hash = base58::encode(hasher.finalize());
         let target_path = self.root_path.with_file_name(&hash);
