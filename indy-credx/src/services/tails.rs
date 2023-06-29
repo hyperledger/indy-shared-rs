@@ -1,13 +1,13 @@
+use rand::random;
 use std::cell::RefCell;
 use std::fs::File;
-use std::io::{Read, Seek, SeekFrom, Write};
-use std::path::PathBuf;
+use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write};
+use std::path::{Path, PathBuf};
 
 use indy_utils::base58;
 use sha2::{Digest, Sha256};
-use tempfile;
 
-use crate::error::Result;
+use crate::error::Error;
 use crate::ursa::{
     cl::{RevocationTailsAccessor, RevocationTailsGenerator, Tail},
     errors::{UrsaCryptoError, UrsaCryptoErrorKind},
@@ -30,8 +30,8 @@ impl TailsReader {
 }
 
 pub trait TailsReaderImpl: std::fmt::Debug + Send {
-    fn hash(&mut self) -> Result<Vec<u8>>;
-    fn read(&mut self, size: usize, offset: usize) -> Result<Vec<u8>>;
+    fn hash(&mut self) -> Result<Vec<u8>, Error>;
+    fn read(&mut self, size: usize, offset: usize) -> Result<Vec<u8>, Error>;
 }
 
 impl RevocationTailsAccessor for TailsReader {
@@ -67,7 +67,7 @@ impl RevocationTailsAccessor for TailsReader {
 #[derive(Debug)]
 pub struct TailsFileReader {
     path: String,
-    file: Option<File>,
+    file: Option<BufReader<File>>,
     hash: Option<Vec<u8>>,
 }
 
@@ -80,12 +80,12 @@ impl TailsFileReader {
         })
     }
 
-    pub fn open(&mut self) -> Result<()> {
+    pub fn open(&mut self) -> Result<(), Error> {
         if self.file.is_some() {
             Ok(())
         } else {
             let file = File::open(self.path.clone())?;
-            self.file.replace(file);
+            self.file.replace(BufReader::new(file));
             Ok(())
         }
     }
@@ -96,7 +96,7 @@ impl TailsFileReader {
 }
 
 impl TailsReaderImpl for TailsFileReader {
-    fn hash(&mut self) -> Result<Vec<u8>> {
+    fn hash(&mut self) -> Result<Vec<u8>, Error> {
         if self.hash.is_some() {
             return Ok(self.hash.as_ref().unwrap().clone());
         }
@@ -117,7 +117,7 @@ impl TailsReaderImpl for TailsFileReader {
         }
     }
 
-    fn read(&mut self, size: usize, offset: usize) -> Result<Vec<u8>> {
+    fn read(&mut self, size: usize, offset: usize) -> Result<Vec<u8>, Error> {
         let mut buf = vec![0u8; size];
 
         self.open()?;
@@ -130,7 +130,10 @@ impl TailsReaderImpl for TailsFileReader {
 }
 
 pub trait TailsWriter: std::fmt::Debug {
-    fn write(&mut self, generator: &mut RevocationTailsGenerator) -> Result<(String, String)>;
+    fn write(
+        &mut self,
+        generator: &mut RevocationTailsGenerator,
+    ) -> Result<(String, String), Error>;
 }
 
 #[derive(Debug)]
@@ -149,32 +152,54 @@ impl TailsFileWriter {
 }
 
 impl TailsWriter for TailsFileWriter {
-    fn write(&mut self, generator: &mut RevocationTailsGenerator) -> Result<(String, String)> {
-        let mut tempf = tempfile::NamedTempFile::new_in(self.root_path.clone())?;
-        let file = tempf.as_file_mut();
+    fn write(
+        &mut self,
+        generator: &mut RevocationTailsGenerator,
+    ) -> Result<(String, String), Error> {
+        struct TempFile<'a>(&'a Path);
+        impl TempFile<'_> {
+            pub fn rename(self, target: &Path) -> Result<(), Error> {
+                let path = std::mem::ManuallyDrop::new(self).0;
+                std::fs::rename(path, target)
+                    .map_err(|e| err_msg!("Error moving tails temp file: {}", e))
+            }
+        }
+        impl Drop for TempFile<'_> {
+            fn drop(&mut self) {
+                if let Err(e) = std::fs::remove_file(self.0) {
+                    error!("Error removing tails temp file: {}", e);
+                }
+            }
+        }
+
+        let temp_name = format!("{:020}.tmp", random::<u64>());
+        let temp_path = self.root_path.with_file_name(temp_name);
+        let file = File::create(temp_path.clone())
+            .map_err(|e| err_msg!(IOError, "Error creating tails temp file: {}", e))?;
+        let temp_handle = TempFile(&temp_path);
+        let mut buf = BufWriter::new(file);
         let mut hasher = Sha256::default();
         let version = &[0u8, 2u8];
-        file.write(version)?;
+        buf.write(version)?;
         hasher.update(version);
         while let Some(tail) = generator.try_next()? {
             let tail_bytes = tail.to_bytes()?;
-            file.write(tail_bytes.as_slice())?;
+            buf.write(tail_bytes.as_slice())?;
             hasher.update(tail_bytes);
         }
-        let tails_size = &file.seek(SeekFrom::Current(0))?;
+        let mut file = buf
+            .into_inner()
+            .map_err(|err| err_msg!("Error flushing output file: {}", err))?;
+        let tails_size = file.seek(SeekFrom::Current(0))?;
         let hash = base58::encode(hasher.finalize());
-        let path = tempf.path().with_file_name(hash.clone());
-        let _outf = match tempf.persist_noclobber(&path) {
-            Ok(f) => f,
-            Err(err) => {
-                return Err(err_msg!(IOError, "Error persisting tails file: {}", err,));
-            }
-        };
-        let path = path.to_string_lossy().into_owned();
+        let target_path = self.root_path.with_file_name(&hash);
+        drop(file);
+        temp_handle.rename(&target_path)?;
+        let target_path = target_path.to_string_lossy().into_owned();
         debug!(
             "TailsFileWriter: wrote tails file [size {}]: {}",
-            tails_size, path
+            tails_size, target_path
         );
-        Ok((path, hash))
+        Ok((target_path, hash))
     }
 }
