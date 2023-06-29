@@ -173,7 +173,7 @@ impl TailsWriter for TailsFileWriter {
         }
 
         let temp_name = format!("{:020}.tmp", random::<u64>());
-        let temp_path = self.root_path.with_file_name(temp_name);
+        let temp_path = self.root_path.join(temp_name);
         let file = File::options()
             .read(true)
             .write(true)
