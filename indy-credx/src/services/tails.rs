@@ -196,7 +196,7 @@ impl TailsWriter for TailsFileWriter {
             .map_err(|e| err_msg!("Error flushing output file: {e}"))?;
         let tails_size = file.seek(SeekFrom::Current(0))?;
         let hash = base58::encode(hasher.finalize());
-        let target_path = self.root_path.with_file_name(&hash);
+        let target_path = self.root_path.join(&hash);
         drop(file);
         temp_handle.rename(&target_path)?;
         let target_path = target_path.to_string_lossy().into_owned();
