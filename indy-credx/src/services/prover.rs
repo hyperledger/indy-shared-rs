@@ -1,13 +1,13 @@
 use std::collections::{HashMap, HashSet};
 
 use super::types::*;
+use crate::anoncreds_clsignatures::{
+    CredentialPublicKey, Issuer as ClIssuer, Prover as ClProver,
+    RevocationRegistry as CryptoRevocationRegistry, SubProofRequest, Verifier as ClVerifier,
+    Witness,
+};
 use crate::error::Result;
 use crate::services::helpers::*;
-use crate::ursa::cl::{
-    issuer::Issuer as CryptoIssuer, prover::Prover as CryptoProver,
-    verifier::Verifier as CryptoVerifier, CredentialPublicKey,
-    RevocationRegistry as CryptoRevocationRegistry, SubProofRequest, Witness,
-};
 use indy_data_types::anoncreds::{
     credential::AttributeValues,
     pres_request::{PresentationRequestPayload, RequestedAttributeInfo, RequestedPredicateInfo},
@@ -45,7 +45,7 @@ pub fn create_credential_request(
         &cred_def.value.primary,
         cred_def.value.revocation.as_ref(),
     )?;
-    let mut credential_values_builder = CryptoIssuer::new_credential_values_builder()?;
+    let mut credential_values_builder = ClIssuer::new_credential_values_builder()?;
     credential_values_builder.add_value_hidden("master_secret", &master_secret.value.value()?)?;
     let cred_values = credential_values_builder.finalize()?;
 
@@ -53,7 +53,7 @@ pub fn create_credential_request(
     let nonce_copy = nonce.try_clone().map_err(err_map!(Unexpected))?;
 
     let (blinded_ms, master_secret_blinding_data, blinded_ms_correctness_proof) =
-        CryptoProver::blind_credential_secrets(
+        ClProver::blind_credential_secrets(
             &credential_pub_key,
             &credential_offer.key_correctness_proof,
             &cred_values,
@@ -109,7 +109,7 @@ pub fn process_credential(
         _ => None,
     };
 
-    CryptoProver::process_credential_signature(
+    ClProver::process_credential_signature(
         &mut credential.signature,
         &credential_values,
         &credential.signature_correctness_proof,
@@ -151,7 +151,7 @@ pub fn create_presentation(
     credentials.validate()?;
 
     let pres_req_val = pres_req.value();
-    let mut proof_builder = CryptoProver::new_proof_builder()?;
+    let mut proof_builder = ClProver::new_proof_builder()?;
     proof_builder.add_common_attribute("master_secret")?;
 
     let mut requested_proof = RequestedProof::default();
@@ -469,7 +469,7 @@ fn build_sub_proof_request(
     trace!("_build_sub_proof_request <<< req_attrs_for_credential: {:?}, req_predicates_for_credential: {:?}",
            req_attrs_for_credential, req_predicates_for_credential);
 
-    let mut sub_proof_request_builder = CryptoVerifier::new_sub_proof_request_builder()?;
+    let mut sub_proof_request_builder = ClVerifier::new_sub_proof_request_builder()?;
 
     for attr in req_attrs_for_credential {
         if attr.revealed {

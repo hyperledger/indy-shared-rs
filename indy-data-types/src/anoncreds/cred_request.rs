@@ -9,8 +9,8 @@ use indy_utils::did::DidValue;
 pub struct CredentialRequest {
     pub prover_did: DidValue,
     pub cred_def_id: CredentialDefinitionId,
-    pub blinded_ms: ursa_cl!(BlindedCredentialSecrets),
-    pub blinded_ms_correctness_proof: ursa_cl!(BlindedCredentialSecretsCorrectnessProof),
+    pub blinded_ms: cl_type!(BlindedCredentialSecrets),
+    pub blinded_ms_correctness_proof: cl_type!(BlindedCredentialSecretsCorrectnessProof),
     pub nonce: Nonce,
 }
 
@@ -38,7 +38,7 @@ impl Validatable for CredentialRequest {
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct CredentialRequestMetadata {
-    pub master_secret_blinding_data: ursa_cl!(CredentialSecretsBlindingFactors),
+    pub master_secret_blinding_data: cl_type!(CredentialSecretsBlindingFactors),
     pub nonce: Nonce,
     pub master_secret_name: String,
 }

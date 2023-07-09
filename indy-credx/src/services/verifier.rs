@@ -5,8 +5,8 @@ use regex::Regex;
 
 use super::helpers::*;
 use super::types::*;
+use crate::anoncreds_clsignatures::{CredentialPublicKey, Verifier as ClVerifier};
 use crate::error::Result;
-use crate::ursa::cl::{verifier::Verifier as CryptoVerifier, CredentialPublicKey};
 use indy_data_types::anoncreds::{
     nonce::Nonce,
     pres_request::{AttributeInfo, NonRevocedInterval, PredicateInfo, PresentationRequestPayload},
@@ -73,7 +73,7 @@ pub fn verify_presentation(
         &received_predicates,
     )?;
 
-    let mut proof_verifier = CryptoVerifier::new_proof_verifier()?;
+    let mut proof_verifier = ClVerifier::new_proof_verifier()?;
     let non_credential_schema = build_non_credential_schema()?;
 
     for sub_proof_index in 0..presentation.identifiers.len() {

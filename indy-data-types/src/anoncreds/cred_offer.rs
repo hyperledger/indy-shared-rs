@@ -9,7 +9,7 @@ use crate::{Validatable, ValidationError};
 pub struct CredentialOffer {
     pub schema_id: SchemaId,
     pub cred_def_id: CredentialDefinitionId,
-    pub key_correctness_proof: ursa_cl!(CredentialKeyCorrectnessProof),
+    pub key_correctness_proof: cl_type!(CredentialKeyCorrectnessProof),
     pub nonce: Nonce,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub method_name: Option<String>,

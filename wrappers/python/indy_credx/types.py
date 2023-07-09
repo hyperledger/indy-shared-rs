@@ -586,28 +586,30 @@ class RevocationRegistry(bindings.IndyObject):
 
     def revoke_credential(
         self,
+        cred_def: Union[JsonType, CredentialDefinition],
         rev_reg_def: Union[JsonType, RevocationRegistryDefinition],
+        rev_reg_def_private: Union[JsonType, RevocationRegistryDefinitionPrivate],
         cred_rev_idx: int,
-        tails_path: str,
     ) -> "RevocationRegistryDelta":
         if not isinstance(rev_reg_def, bindings.IndyObject):
             rev_reg_def = RevocationRegistryDefinition.load(rev_reg_def)
         self.handle, rev_delta = bindings.revoke_credential(
-            rev_reg_def.handle, self.handle, cred_rev_idx, tails_path
+            cred_def.handle, rev_reg_def.handle, rev_reg_def_private.handle, self.handle, cred_rev_idx,
         )
         return RevocationRegistryDelta(rev_delta)
 
     def update(
         self,
+        cred_def: Union[JsonType, CredentialDefinition],
         rev_reg_def: Union[JsonType, RevocationRegistryDefinition],
+        rev_reg_def_private: Union[JsonType, RevocationRegistryDefinitionPrivate],
         issued: Sequence[int],
         revoked: Sequence[int],
-        tails_path: str,
     ) -> "RevocationRegistryDelta":
         if not isinstance(rev_reg_def, bindings.IndyObject):
             rev_reg_def = RevocationRegistryDefinition.load(rev_reg_def)
         self.handle, rev_delta = bindings.update_revocation_registry(
-            rev_reg_def.handle, self.handle, issued, revoked, tails_path
+            cred_def.handle, rev_reg_def.handle, rev_reg_def_private.handle, self.handle, issued, revoked,
         )
         return RevocationRegistryDelta(rev_delta)
 
@@ -641,7 +643,6 @@ class CredentialRevocationConfig:
         rev_reg: Union[JsonType, "RevocationRegistry"] = None,
         rev_reg_index: int = None,
         rev_reg_used: Sequence[int] = None,
-        tails_path: str = None,
     ):
         if not isinstance(rev_reg_def, bindings.IndyObject):
             rev_reg_def = RevocationRegistryDefinition.load(rev_reg_def)
@@ -656,7 +657,6 @@ class CredentialRevocationConfig:
         self.rev_reg = rev_reg
         self.rev_reg_index = rev_reg_index
         self.rev_reg_used = rev_reg_used
-        self.tails_path = tails_path
 
     @property
     def _native(self) -> bindings.RevocationConfig:
@@ -666,7 +666,6 @@ class CredentialRevocationConfig:
             self.rev_reg,
             self.rev_reg_index,
             self.rev_reg_used,
-            self.tails_path,
         )
 
 

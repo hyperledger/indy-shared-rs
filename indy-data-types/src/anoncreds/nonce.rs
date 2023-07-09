@@ -2,11 +2,11 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
-#[cfg(any(feature = "cl", feature = "cl_native"))]
-use crate::ursa::cl::{new_nonce, Nonce as UrsaNonce};
 #[cfg(feature = "serde")]
 use serde::{de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 
+#[cfg(any(feature = "cl", feature = "cl_native"))]
+use crate::anoncreds_clsignatures::{new_nonce, Nonce as UrsaNonce};
 use crate::ConversionError;
 
 pub struct Nonce {
@@ -226,7 +226,6 @@ mod tests {
             "1a",
         ];
         for v in invalid.iter() {
-            println!("try {}", v);
             assert!(Nonce::try_from(*v).is_err())
         }
     }

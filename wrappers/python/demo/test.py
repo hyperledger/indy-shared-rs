@@ -71,7 +71,6 @@ cred, _rev_reg_updated, _rev_delta = Credential.create(
         rev_reg,
         issuer_rev_index,
         (),
-        rev_reg_def.tails_location,
     ),
 )
 # print("Issued credential:")
@@ -130,10 +129,10 @@ assert verified
 
 
 # rev_delta_2 = rev_reg.revoke_credential(
-#     rev_reg_def, issuer_rev_index, rev_reg_def.tails_location
+#     cred_def, rev_reg_def, rev_reg_def_private, issuer_rev_index,
 # )
 rev_delta_2 = rev_reg.update(
-    rev_reg_def, [], [issuer_rev_index], rev_reg_def.tails_location
+    cred_def, rev_reg_def, rev_reg_def_private, [], [issuer_rev_index],
 )
 
 rev_state.update(

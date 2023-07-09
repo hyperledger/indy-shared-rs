@@ -19,7 +19,7 @@ pub use indy_utils::keys;
 pub use indy_utils::{invalid, ConversionError, Validatable, ValidationError};
 
 #[cfg(any(feature = "cl", feature = "cl_native"))]
-pub use ursa;
+pub use anoncreds_clsignatures;
 
 /// Type definitions related Indy credential issuance and verification
 pub mod anoncreds;

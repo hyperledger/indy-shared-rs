@@ -357,7 +357,6 @@ class RevocationConfig(Structure):
         ("rev_reg", ObjectHandle),
         ("rev_reg_index", c_int64),
         ("rev_reg_used", FfiIntList),
-        ("tails_path", c_char_p),
     ]
 
     @classmethod
@@ -368,7 +367,6 @@ class RevocationConfig(Structure):
         rev_reg: IndyObject,
         rev_reg_index: int,
         rev_reg_used: Sequence[int],
-        tails_path: str,
     ) -> "RevocationConfig":
         config = RevocationConfig(
             rev_reg_def=rev_reg_def.handle,
@@ -376,7 +374,6 @@ class RevocationConfig(Structure):
             rev_reg=rev_reg.handle,
             rev_reg_index=rev_reg_index,
             rev_reg_used=FfiIntList.create(rev_reg_used),
-            tails_path=encode_str(tails_path),
         )
         keepalive(config, rev_reg_def, rev_reg_def_private, rev_reg)
         return config
@@ -689,19 +686,21 @@ def process_credential(
 
 
 def revoke_credential(
+    cred_def: ObjectHandle,
     rev_reg_def: ObjectHandle,
+    rev_reg_def_private: ObjectHandle,
     rev_reg: ObjectHandle,
     cred_rev_idx: int,
-    tails_path: str,
 ) -> Tuple[ObjectHandle, ObjectHandle]:
     upd_rev_reg = ObjectHandle()
     rev_delta = ObjectHandle()
     do_call(
         "credx_revoke_credential",
+        cred_def,
         rev_reg_def,
+        rev_reg_def_private,
         rev_reg,
         c_int64(cred_rev_idx),
-        encode_str(tails_path),
         byref(upd_rev_reg),
         byref(rev_delta),
     )
@@ -840,21 +839,23 @@ def create_revocation_registry(
 
 
 def update_revocation_registry(
+    cred_def: ObjectHandle,
     rev_reg_def: ObjectHandle,
+    rev_reg_def_private: ObjectHandle,
     rev_reg: ObjectHandle,
     issued: Sequence[int],
     revoked: Sequence[int],
-    tails_path: str,
 ) -> Tuple[ObjectHandle, ObjectHandle]:
     upd_rev_reg = ObjectHandle()
     rev_delta = ObjectHandle()
     do_call(
         "credx_update_revocation_registry",
+        cred_def,
         rev_reg_def,
+        rev_reg_def_private,
         rev_reg,
         FfiIntList.create(issued),
         FfiIntList.create(revoked),
-        encode_str(tails_path),
         byref(upd_rev_reg),
         byref(rev_delta),
     )

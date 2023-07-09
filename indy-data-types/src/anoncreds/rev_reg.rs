@@ -19,7 +19,7 @@ impl RevocationRegistry {
                 RevocationRegistryDelta::RevocationRegistryDeltaV1(RevocationRegistryDeltaV1 {
                     value: {
                         let empty = HashSet::new();
-                        crate::ursa::cl::RevocationRegistryDelta::from_parts(
+                        crate::anoncreds_clsignatures::RevocationRegistryDelta::from_parts(
                             None, &v1.value, &empty, &empty,
                         )
                     },
@@ -32,7 +32,7 @@ impl RevocationRegistry {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RevocationRegistryV1 {
-    pub value: ursa_cl!(RevocationRegistry),
+    pub value: cl_type!(RevocationRegistry),
 }
 
 #[derive(Clone, Debug)]
@@ -49,5 +49,5 @@ impl Validatable for RevocationRegistryDelta {}
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct RevocationRegistryDeltaV1 {
-    pub value: ursa_cl!(RevocationRegistryDelta),
+    pub value: cl_type!(RevocationRegistryDelta),
 }

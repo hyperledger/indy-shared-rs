@@ -87,11 +87,12 @@ pub extern "C" fn credx_create_revocation_registry(
 
 #[no_mangle]
 pub extern "C" fn credx_update_revocation_registry(
+    cred_def: ObjectHandle,
     rev_reg_def: ObjectHandle,
+    rev_reg_def_priv: ObjectHandle,
     rev_reg: ObjectHandle,
     issued: FfiList<i64>,
     revoked: FfiList<i64>,
-    tails_path: FfiStr,
     rev_reg_p: *mut ObjectHandle,
     rev_reg_delta_p: *mut ObjectHandle,
 ) -> ErrorCode {
@@ -100,17 +101,13 @@ pub extern "C" fn credx_update_revocation_registry(
         check_useful_c_ptr!(rev_reg_delta_p);
         let issued = registry_indices_to_set(issued.as_slice().into_iter().cloned())?;
         let revoked = registry_indices_to_set(revoked.as_slice().into_iter().cloned())?;
-        let tails_reader = TailsFileReader::new(
-            tails_path
-                .as_opt_str()
-                .ok_or_else(|| err_msg!("Missing tails file path"))?,
-        );
         let (rev_reg, rev_reg_delta) = update_revocation_registry(
+            cred_def.load()?.cast_ref()?,
             rev_reg_def.load()?.cast_ref()?,
+            rev_reg_def_priv.load()?.cast_ref()?,
             rev_reg.load()?.cast_ref()?,
             issued,
             revoked,
-            &tails_reader,
         )?;
         let rev_reg = ObjectHandle::create(rev_reg)?;
         let rev_reg_delta = ObjectHandle::create(rev_reg_delta)?;
@@ -124,28 +121,25 @@ pub extern "C" fn credx_update_revocation_registry(
 
 #[no_mangle]
 pub extern "C" fn credx_revoke_credential(
+    cred_def: ObjectHandle,
     rev_reg_def: ObjectHandle,
+    rev_reg_def_priv: ObjectHandle,
     rev_reg: ObjectHandle,
     cred_rev_idx: i64,
-    tails_path: FfiStr,
     rev_reg_p: *mut ObjectHandle,
     rev_reg_delta_p: *mut ObjectHandle,
 ) -> ErrorCode {
     catch_error(|| {
         check_useful_c_ptr!(rev_reg_p);
         check_useful_c_ptr!(rev_reg_delta_p);
-        let tails_reader = TailsFileReader::new(
-            tails_path
-                .as_opt_str()
-                .ok_or_else(|| err_msg!("Missing tails file path"))?,
-        );
         let (rev_reg, rev_reg_delta) = revoke_credential(
+            cred_def.load()?.cast_ref()?,
             rev_reg_def.load()?.cast_ref()?,
+            rev_reg_def_priv.load()?.cast_ref()?,
             rev_reg.load()?.cast_ref()?,
             cred_rev_idx
                 .try_into()
                 .map_err(|_| err_msg!("Invalid registry index"))?,
-            &tails_reader,
         )?;
         let rev_reg = ObjectHandle::create(rev_reg)?;
         let rev_reg_delta = ObjectHandle::create(rev_reg_delta)?;

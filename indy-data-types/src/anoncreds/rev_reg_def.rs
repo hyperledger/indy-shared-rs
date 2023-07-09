@@ -80,7 +80,7 @@ pub struct RevocationRegistryDefinitionValue {
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct RevocationRegistryDefinitionValuePublicKeys {
-    pub accum_key: ursa_cl!(RevocationKeyPublic),
+    pub accum_key: cl_type!(RevocationKeyPublic),
 }
 
 #[derive(Clone, Debug)]
@@ -143,7 +143,7 @@ pub struct RevocationRegistryDefinitionV1 {
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct RevocationRegistryDefinitionPrivate {
-    pub value: ursa_cl!(RevocationKeyPrivate),
+    pub value: cl_type!(RevocationKeyPrivate),
 }
 
 #[derive(Deserialize, Debug, Serialize)]

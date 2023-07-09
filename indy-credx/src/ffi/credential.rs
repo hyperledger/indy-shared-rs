@@ -12,7 +12,6 @@ use crate::error::Result;
 use crate::services::{
     issuer::create_credential,
     prover::process_credential,
-    tails::TailsFileReader,
     types::{Credential, CredentialRevocationConfig, MakeCredentialValues},
     utils::encode_credential_attribute,
 };
@@ -25,7 +24,6 @@ pub struct FfiCredRevInfo<'a> {
     registry: ObjectHandle,
     reg_idx: i64,
     reg_used: FfiList<'a, i64>,
-    tails_path: FfiStr<'a>,
 }
 
 struct RevocationConfig {
@@ -34,7 +32,6 @@ struct RevocationConfig {
     registry: IndyObject,
     reg_idx: u32,
     reg_used: HashSet<u32>,
-    tails_path: String,
 }
 
 impl RevocationConfig {
@@ -45,7 +42,6 @@ impl RevocationConfig {
             registry: self.registry.cast_ref()?,
             registry_idx: self.reg_idx,
             registry_used: &self.reg_used,
-            tails_reader: TailsFileReader::new(self.tails_path.as_str()),
         })
     }
 }
@@ -104,11 +100,6 @@ pub extern "C" fn credx_create_credential(
         }
         let revocation_config = if !revocation.is_null() {
             let revocation = unsafe { &*revocation };
-            let tails_path = revocation
-                .tails_path
-                .as_opt_str()
-                .ok_or_else(|| err_msg!("Missing tails file path"))?
-                .to_string();
             let mut reg_used = HashSet::new();
             for reg_idx in revocation.reg_used.as_slice() {
                 reg_used.insert(
@@ -126,7 +117,6 @@ pub extern "C" fn credx_create_credential(
                     .try_into()
                     .map_err(|_| err_msg!("Invalid revocation index"))?,
                 reg_used,
-                tails_path,
             })
         } else {
             None
