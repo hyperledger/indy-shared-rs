@@ -2,6 +2,7 @@ from time import time
 
 from indy_credx import (
     generate_nonce,
+    library_version,
     Credential,
     CredentialDefinition,
     CredentialOffer,
@@ -16,6 +17,7 @@ from indy_credx import (
     Schema,
 )
 
+print("credx library version:", library_version())
 
 test_did = "55GkHamhTU1ZbTbV2ab9DE"
 

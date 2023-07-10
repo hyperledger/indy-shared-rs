@@ -420,9 +420,9 @@ def get_library() -> CDLL:
 
 def library_version() -> str:
     """Get the version of the installed aries-askar library."""
-    lib = get_library()
-    lib.credx_version.restype = c_void_p
-    return str(StrBuffer(lib.credx_version()))
+    lib_fn = getattr(get_library(), "credx_version")
+    lib_fn.restype = StrBuffer
+    return str(lib_fn())
 
 
 def _load_library(lib_name: str) -> CDLL:
