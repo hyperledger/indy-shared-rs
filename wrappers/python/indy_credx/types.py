@@ -431,6 +431,7 @@ class Presentation(bindings.IndyObject):
         rev_reg_entries: Mapping[
             str, Mapping[int, Union[JsonType, "RevocationRegistry"]]
         ] = None,
+        accept_legacy_revocation: bool = False,
     ) -> bool:
         if not isinstance(pres_req, bindings.IndyObject):
             pres_req = PresentationRequest.load(pres_req)
@@ -470,6 +471,7 @@ class Presentation(bindings.IndyObject):
             cred_defs,
             reg_defs,
             reg_entries or None,
+            accept_legacy_revocation,
         )
 
 

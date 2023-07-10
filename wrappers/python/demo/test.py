@@ -127,6 +127,16 @@ verified = presentation.verify(
 )
 assert verified
 
+# check legacy revocation proof support
+verified = presentation.verify(
+    pres_req,
+    [schema],
+    [cred_def],
+    [rev_reg_def],
+    {rev_reg_def.id: {timestamp: rev_reg}},
+    accept_legacy_revocation=True,
+)
+assert verified
 
 # rev_delta_2 = rev_reg.revoke_credential(
 #     cred_def, rev_reg_def, rev_reg_def_private, issuer_rev_index,

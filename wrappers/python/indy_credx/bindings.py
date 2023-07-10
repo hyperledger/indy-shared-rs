@@ -789,6 +789,7 @@ def verify_presentation(
     cred_defs: Sequence[ObjectHandle],
     rev_reg_defs: Sequence[ObjectHandle],
     rev_regs: Sequence[RevocationEntry],
+    accept_legacy_revocation: bool = False,
 ) -> bool:
     verify = c_int8()
     entry_list = RevocationEntryList()
@@ -796,7 +797,7 @@ def verify_presentation(
         entry_list.count = len(rev_regs)
         entry_list.data = (RevocationEntry * entry_list.count)(*rev_regs)
     do_call(
-        "credx_verify_presentation",
+        "credx_verify_presentation_legacy" if accept_legacy_revocation else "credx_verify_presentation",
         presentation,
         pres_req,
         FfiObjectHandleList.create(schemas),

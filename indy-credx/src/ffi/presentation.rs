@@ -10,7 +10,7 @@ use crate::error::Result;
 use crate::services::{
     prover::create_presentation,
     types::{PresentCredentials, Presentation, RevocationRegistryDefinition},
-    verifier::verify_presentation,
+    verifier::_verify_presentation,
 };
 
 impl_indy_object!(Presentation, "Presentation");
@@ -194,6 +194,50 @@ pub extern "C" fn credx_verify_presentation(
     rev_reg_entries: FfiList<FfiRevocationEntry>,
     result_p: *mut i8,
 ) -> ErrorCode {
+    _credx_verify_presentation(
+        presentation,
+        pres_req,
+        schemas,
+        cred_defs,
+        rev_reg_defs,
+        rev_reg_entries,
+        false,
+        result_p,
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn credx_verify_presentation_legacy(
+    presentation: ObjectHandle,
+    pres_req: ObjectHandle,
+    schemas: FfiList<ObjectHandle>,
+    cred_defs: FfiList<ObjectHandle>,
+    rev_reg_defs: FfiList<ObjectHandle>,
+    rev_reg_entries: FfiList<FfiRevocationEntry>,
+    result_p: *mut i8,
+) -> ErrorCode {
+    _credx_verify_presentation(
+        presentation,
+        pres_req,
+        schemas,
+        cred_defs,
+        rev_reg_defs,
+        rev_reg_entries,
+        true,
+        result_p,
+    )
+}
+
+fn _credx_verify_presentation(
+    presentation: ObjectHandle,
+    pres_req: ObjectHandle,
+    schemas: FfiList<ObjectHandle>,
+    cred_defs: FfiList<ObjectHandle>,
+    rev_reg_defs: FfiList<ObjectHandle>,
+    rev_reg_entries: FfiList<FfiRevocationEntry>,
+    accept_legacy_revocation: bool,
+    result_p: *mut i8,
+) -> ErrorCode {
     catch_error(|| {
         let schemas = IndyObjectList::load(schemas.as_slice())?;
         let cred_defs = IndyObjectList::load(cred_defs.as_slice())?;
@@ -221,13 +265,14 @@ pub extern "C" fn credx_verify_presentation(
                 .or_insert_with(HashMap::new)
                 .insert(*timestamp, entry.cast_ref()?);
         }
-        let verify = verify_presentation(
+        let verify = _verify_presentation(
             presentation.load()?.cast_ref()?,
             pres_req.load()?.cast_ref()?,
             &schemas.refs_map()?,
             &cred_defs.refs_map()?,
             Some(&rev_reg_defs.refs_map()?),
             Some(&rev_regs),
+            accept_legacy_revocation,
         )?;
         unsafe { *result_p = verify as i8 };
         Ok(())
