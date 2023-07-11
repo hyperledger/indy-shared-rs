@@ -177,7 +177,7 @@ pub extern "C" fn credx_encode_credential_attributes(
 pub extern "C" fn credx_process_credential(
     cred: ObjectHandle,
     cred_req_metadata: ObjectHandle,
-    master_secret: ObjectHandle,
+    link_secret: ObjectHandle,
     cred_def: ObjectHandle,
     rev_reg_def: ObjectHandle,
     cred_p: *mut ObjectHandle,
@@ -192,7 +192,7 @@ pub extern "C" fn credx_process_credential(
         process_credential(
             &mut cred,
             cred_req_metadata.load()?.cast_ref()?,
-            master_secret.load()?.cast_ref()?,
+            link_secret.load()?.cast_ref()?,
             cred_def.load()?.cast_ref()?,
             rev_reg_def
                 .opt_load()?

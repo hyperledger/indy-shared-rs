@@ -106,21 +106,21 @@ class CredentialRequest(bindings.IndyObject):
         cls,
         prover_did: str,
         cred_def: Union[JsonType, CredentialDefinition],
-        master_secret: Union[JsonType, "MasterSecret"],
-        master_secret_id: str,
+        link_secret: Union[JsonType, "LinkSecret"],
+        link_secret_id: str,
         cred_offer: Union[JsonType, CredentialOffer],
     ) -> Tuple["CredentialRequest", "CredentialRequestMetadata"]:
         if not isinstance(cred_def, bindings.IndyObject):
             cred_def = CredentialDefinition.load(cred_def)
-        if not isinstance(master_secret, bindings.IndyObject):
-            master_secret = MasterSecret.load(master_secret)
+        if not isinstance(link_secret, bindings.IndyObject):
+            link_secret = LinkSecret.load(link_secret)
         if not isinstance(cred_offer, bindings.IndyObject):
             cred_offer = CredentialOffer.load(cred_offer)
         cred_def, cred_def_metadata = bindings.create_credential_request(
             prover_did,
             cred_def.handle,
-            master_secret.handle,
-            master_secret_id,
+            link_secret.handle,
+            link_secret_id,
             cred_offer.handle,
         )
         return CredentialRequest(cred_def), CredentialRequestMetadata(cred_def_metadata)
@@ -142,15 +142,15 @@ class CredentialRequestMetadata(bindings.IndyObject):
         )
 
 
-class MasterSecret(bindings.IndyObject):
+class LinkSecret(bindings.IndyObject):
     @classmethod
-    def create(cls) -> "MasterSecret":
-        return MasterSecret(bindings.create_master_secret())
+    def create(cls) -> "LinkSecret":
+        return LinkSecret(bindings.create_link_secret())
 
     @classmethod
-    def load(cls, value: JsonType) -> "MasterSecret":
-        return MasterSecret(
-            bindings._object_from_json("credx_master_secret_from_json", value)
+    def load(cls, value: JsonType) -> "LinkSecret":
+        return LinkSecret(
+            bindings._object_from_json("credx_link_secret_from_json", value)
         )
 
 
@@ -230,14 +230,14 @@ class Credential(bindings.IndyObject):
     def process(
         self,
         cred_req_metadata: Union[JsonType, CredentialRequestMetadata],
-        master_secret: Union[JsonType, MasterSecret],
+        link_secret: Union[JsonType, LinkSecret],
         cred_def: Union[JsonType, CredentialDefinition],
         rev_reg_def: Optional[Union[JsonType, "RevocationRegistryDefinition"]] = None,
     ) -> "Credential":
         if not isinstance(cred_req_metadata, bindings.IndyObject):
             cred_req_metadata = CredentialRequestMetadata.load(cred_req_metadata)
-        if not isinstance(master_secret, bindings.IndyObject):
-            master_secret = MasterSecret.load(master_secret)
+        if not isinstance(link_secret, bindings.IndyObject):
+            link_secret = LinkSecret.load(link_secret)
         if not isinstance(cred_def, bindings.IndyObject):
             cred_def = CredentialDefinition.load(cred_def)
         if rev_reg_def and not isinstance(rev_reg_def, bindings.IndyObject):
@@ -246,7 +246,7 @@ class Credential(bindings.IndyObject):
             bindings.process_credential(
                 self.handle,
                 cred_req_metadata.handle,
-                master_secret.handle,
+                link_secret.handle,
                 cred_def.handle,
                 rev_reg_def.handle if rev_reg_def else None,
             )
@@ -366,14 +366,14 @@ class Presentation(bindings.IndyObject):
         pres_req: Union[JsonType, PresentationRequest],
         present_creds: PresentCredentials,
         self_attest: Optional[Mapping[str, str]],
-        master_secret: Union[JsonType, MasterSecret],
+        link_secret: Union[JsonType, LinkSecret],
         schemas: Sequence[Union[JsonType, Schema]],
         cred_defs: Sequence[Union[JsonType, CredentialDefinition]],
     ) -> "Presentation":
         if not isinstance(pres_req, bindings.IndyObject):
             pres_req = PresentationRequest.load(pres_req)
-        if not isinstance(master_secret, bindings.IndyObject):
-            master_secret = MasterSecret.load(master_secret)
+        if not isinstance(link_secret, bindings.IndyObject):
+            link_secret = LinkSecret.load(link_secret)
         schemas = [
             (Schema.load(s) if not isinstance(s, bindings.IndyObject) else s).handle
             for s in schemas
@@ -410,7 +410,7 @@ class Presentation(bindings.IndyObject):
                 creds,
                 creds_prove,
                 self_attest,
-                master_secret.handle,
+                link_secret.handle,
                 schemas,
                 cred_defs,
             )

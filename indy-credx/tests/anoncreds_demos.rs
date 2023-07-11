@@ -24,7 +24,7 @@ fn anoncreds_works_for_single_issuer_single_prover() {
     // Create Issuer pseudo wallet
     let mut issuer_wallet = IssuerWallet::default();
 
-    // Create Prover pseudo wallet and master secret
+    // Create Prover pseudo wallet and link secret
     let mut prover_wallet = ProverWallet::default();
 
     // Issuer creates Schema - would be published to the ledger
@@ -65,7 +65,7 @@ fn anoncreds_works_for_single_issuer_single_prover() {
     let (cred_request, cred_request_metadata) = prover::create_credential_request(
         &prover_wallet.did,
         &*gvt_cred_def,
-        &prover_wallet.master_secret,
+        &prover_wallet.link_secret,
         "default",
         &cred_offer,
     )
@@ -100,7 +100,7 @@ fn anoncreds_works_for_single_issuer_single_prover() {
     prover::process_credential(
         &mut recv_cred,
         &cred_request_metadata,
-        &prover_wallet.master_secret,
+        &prover_wallet.link_secret,
         &*gvt_cred_def,
         None,
     )
@@ -160,7 +160,7 @@ fn anoncreds_works_for_single_issuer_single_prover() {
         &pres_request,
         present,
         Some(self_attested),
-        &prover_wallet.master_secret,
+        &prover_wallet.link_secret,
         &schemas,
         &cred_defs,
     )
@@ -220,7 +220,7 @@ fn anoncreds_works_for_single_issuer_single_prover_unrevoked() {
     // Create Issuer pseudo wallet
     let mut issuer_wallet = IssuerWallet::default();
 
-    // Create Prover pseudo wallet and master secret
+    // Create Prover pseudo wallet and link secret
     let mut prover_wallet = ProverWallet::default();
 
     // Issuer creates Schema - would be published to the ledger
@@ -280,7 +280,7 @@ fn anoncreds_works_for_single_issuer_single_prover_unrevoked() {
     let (cred_request, cred_request_metadata) = prover::create_credential_request(
         &prover_wallet.did,
         &gvt_cred_def,
-        &prover_wallet.master_secret,
+        &prover_wallet.link_secret,
         "default",
         &cred_offer,
     )
@@ -321,7 +321,7 @@ fn anoncreds_works_for_single_issuer_single_prover_unrevoked() {
     prover::process_credential(
         &mut recv_cred,
         &cred_request_metadata,
-        &prover_wallet.master_secret,
+        &prover_wallet.link_secret,
         &*gvt_cred_def,
         Some(&rev_reg_def),
     )
@@ -393,7 +393,7 @@ fn anoncreds_works_for_single_issuer_single_prover_unrevoked() {
         &pres_request,
         present,
         Some(self_attested),
-        &prover_wallet.master_secret,
+        &prover_wallet.link_secret,
         &schemas,
         &cred_defs,
     )

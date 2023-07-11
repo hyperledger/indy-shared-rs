@@ -20,21 +20,21 @@ use indy_utils::{Qualifiable, Validatable};
 
 use super::tails::TailsReader;
 
-pub fn create_master_secret() -> Result<MasterSecret> {
-    MasterSecret::new().map_err(err_map!(Unexpected))
+pub fn create_link_secret() -> Result<LinkSecret> {
+    LinkSecret::new().map_err(err_map!(Unexpected))
 }
 
 pub fn create_credential_request(
     prover_did: &DidValue,
     cred_def: &CredentialDefinition,
-    master_secret: &MasterSecret,
-    master_secret_id: &str,
+    link_secret: &LinkSecret,
+    link_secret_id: &str,
     credential_offer: &CredentialOffer,
 ) -> Result<(CredentialRequest, CredentialRequestMetadata)> {
     trace!(
-        "create_credential_request >>> cred_def: {:?}, master_secret: {:?}, credential_offer: {:?}",
+        "create_credential_request >>> cred_def: {:?}, link_secret: {:?}, credential_offer: {:?}",
         cred_def,
-        secret!(&master_secret),
+        secret!(&link_secret),
         credential_offer
     );
 
@@ -46,7 +46,7 @@ pub fn create_credential_request(
         cred_def.value.revocation.as_ref(),
     )?;
     let mut credential_values_builder = ClIssuer::new_credential_values_builder()?;
-    credential_values_builder.add_value_hidden("master_secret", &master_secret.value.value()?)?;
+    credential_values_builder.add_value_hidden("master_secret", &link_secret.value.value()?)?;
     let cred_values = credential_values_builder.finalize()?;
 
     let nonce = new_nonce()?;
@@ -71,7 +71,7 @@ pub fn create_credential_request(
     let credential_request_metadata = CredentialRequestMetadata {
         master_secret_blinding_data,
         nonce: nonce_copy,
-        master_secret_name: master_secret_id.to_string(),
+        master_secret_name: link_secret_id.to_string(),
     };
 
     trace!(
@@ -86,12 +86,12 @@ pub fn create_credential_request(
 pub fn process_credential(
     credential: &mut Credential,
     cred_request_metadata: &CredentialRequestMetadata,
-    master_secret: &MasterSecret,
+    link_secret: &LinkSecret,
     cred_def: &CredentialDefinition,
     rev_reg_def: Option<&RevocationRegistryDefinition>,
 ) -> Result<()> {
-    trace!("process_credential >>> credential: {:?}, cred_request_metadata: {:?}, master_secret: {:?}, cred_def: {:?}, rev_reg_def: {:?}",
-            credential, cred_request_metadata, secret!(&master_secret), cred_def, rev_reg_def);
+    trace!("process_credential >>> credential: {:?}, cred_request_metadata: {:?}, link_secret: {:?}, cred_def: {:?}, rev_reg_def: {:?}",
+            credential, cred_request_metadata, secret!(&link_secret), cred_def, rev_reg_def);
 
     let cred_def = match cred_def {
         CredentialDefinition::CredentialDefinitionV1(cd) => cd,
@@ -101,7 +101,7 @@ pub fn process_credential(
         cred_def.value.revocation.as_ref(),
     )?;
     let credential_values =
-        build_credential_values(&credential.values.0, Some(&master_secret.value))?;
+        build_credential_values(&credential.values.0, Some(&link_secret.value))?;
     let rev_pub_key = match rev_reg_def {
         Some(RevocationRegistryDefinition::RevocationRegistryDefinitionV1(def)) => {
             Some(&def.value.public_keys.accum_key)
@@ -130,12 +130,12 @@ pub fn create_presentation(
     pres_req: &PresentationRequest,
     credentials: PresentCredentials,
     self_attested: Option<HashMap<String, String>>,
-    master_secret: &MasterSecret,
+    link_secret: &LinkSecret,
     schemas: &HashMap<SchemaId, &Schema>,
     cred_defs: &HashMap<CredentialDefinitionId, &CredentialDefinition>,
 ) -> Result<Presentation> {
-    trace!("create_proof >>> credentials: {:?}, pres_req: {:?}, credentials: {:?}, self_attested: {:?}, master_secret: {:?}, schemas: {:?}, cred_defs: {:?}",
-            credentials, pres_req, credentials, &self_attested, secret!(&master_secret), schemas, cred_defs);
+    trace!("create_proof >>> credentials: {:?}, pres_req: {:?}, credentials: {:?}, self_attested: {:?}, link_secret: {:?}, schemas: {:?}, cred_defs: {:?}",
+            credentials, pres_req, credentials, &self_attested, secret!(&link_secret), schemas, cred_defs);
 
     if credentials.is_empty()
         && self_attested
@@ -192,7 +192,7 @@ pub fn create_presentation(
 
         let credential_schema = build_credential_schema(&schema.attr_names.0)?;
         let credential_values =
-            build_credential_values(&credential.values.0, Some(&master_secret.value))?;
+            build_credential_values(&credential.values.0, Some(&link_secret.value))?;
         let (req_attrs, req_predicates) = prepare_credential_for_proving(
             present.requested_attributes,
             present.requested_predicates,

@@ -2,7 +2,7 @@ use indy_credx::types::{CredentialDefinitionPrivate, CredentialKeyCorrectnessPro
 
 use indy_data_types::anoncreds::cred_def::CredentialDefinition;
 use indy_data_types::anoncreds::credential::Credential;
-use indy_data_types::anoncreds::master_secret::MasterSecret;
+use indy_data_types::anoncreds::link_secret::LinkSecret;
 use indy_utils::did::DidValue;
 
 pub const ISSUER_DID: &'static str = "NcYxiDXkpYi6ov5FcYDi1e";
@@ -56,16 +56,16 @@ impl Default for IssuerWallet {
 pub struct ProverWallet {
     pub did: DidValue,
     pub credentials: Vec<Credential>,
-    pub master_secret: MasterSecret,
+    pub link_secret: LinkSecret,
 }
 
 impl Default for ProverWallet {
     fn default() -> Self {
-        let master_secret = MasterSecret::new().expect("Error creating prover master secret");
+        let link_secret = LinkSecret::new().expect("Error creating prover link secret");
         Self {
             did: DidValue::from(PROVER_DID.to_string()),
             credentials: vec![],
-            master_secret,
+            link_secret,
         }
     }
 }
