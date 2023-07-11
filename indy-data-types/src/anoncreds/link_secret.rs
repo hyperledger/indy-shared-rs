@@ -6,11 +6,11 @@ use crate::anoncreds_clsignatures::{MasterSecret as ClMasterSecret, Prover as Cl
 use crate::ConversionError;
 
 #[derive(Serialize, Deserialize)]
-pub struct MasterSecret {
+pub struct LinkSecret {
     pub value: ClMasterSecret,
 }
 
-impl MasterSecret {
+impl LinkSecret {
     #[cfg(any(feature = "cl", feature = "cl_native"))]
     #[inline]
     pub fn new() -> Result<Self, ConversionError> {
@@ -27,9 +27,9 @@ impl MasterSecret {
     }
 }
 
-impl fmt::Debug for MasterSecret {
+impl fmt::Debug for LinkSecret {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_tuple("MasterSecret")
+        f.debug_tuple("LinkSecret")
             .field(if cfg!(test) { &self.value } else { &"<hidden>" })
             .finish()
     }

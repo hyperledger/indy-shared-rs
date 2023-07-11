@@ -13,9 +13,9 @@ pub mod cred_request;
 /// Credentials
 pub mod credential;
 
-/// Identity master secret
+/// Identity link secret
 #[cfg(any(feature = "cl", feature = "cl_native"))]
-pub mod master_secret;
+pub mod link_secret;
 
 /// Nonce used in presentation requests
 pub mod nonce;

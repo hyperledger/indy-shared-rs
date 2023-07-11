@@ -12,8 +12,8 @@ use crate::services::{
 pub extern "C" fn credx_create_credential_request(
     prover_did: FfiStr,
     cred_def: ObjectHandle,
-    master_secret: ObjectHandle,
-    master_secret_id: FfiStr,
+    link_secret: ObjectHandle,
+    link_secret_id: FfiStr,
     cred_offer: ObjectHandle,
     cred_req_p: *mut ObjectHandle,
     cred_req_meta_p: *mut ObjectHandle,
@@ -27,14 +27,14 @@ pub extern "C" fn credx_create_credential_request(
                 .ok_or_else(|| err_msg!("Missing prover DID"))?;
             DidValue::from_str(did)?
         };
-        let master_secret_id = master_secret_id
+        let link_secret_id = link_secret_id
             .as_opt_str()
-            .ok_or_else(|| err_msg!("Missing master secret ID"))?;
+            .ok_or_else(|| err_msg!("Missing link secret ID"))?;
         let (cred_req, cred_req_metadata) = create_credential_request(
             &prover_did,
             cred_def.load()?.cast_ref()?,
-            master_secret.load()?.cast_ref()?,
-            master_secret_id,
+            link_secret.load()?.cast_ref()?,
+            link_secret_id,
             cred_offer.load()?.cast_ref()?,
         )?;
         let cred_req = ObjectHandle::create(cred_req)?;

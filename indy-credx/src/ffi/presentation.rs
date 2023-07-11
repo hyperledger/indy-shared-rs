@@ -63,7 +63,7 @@ pub extern "C" fn credx_create_presentation(
     credentials_prove: FfiList<FfiCredentialProve>,
     self_attest_names: FfiStrList,
     self_attest_values: FfiStrList,
-    master_secret: ObjectHandle,
+    link_secret: ObjectHandle,
     schemas: FfiList<ObjectHandle>,
     cred_defs: FfiList<ObjectHandle>,
     presentation_p: *mut ObjectHandle,
@@ -151,7 +151,7 @@ pub extern "C" fn credx_create_presentation(
             pres_req.load()?.cast_ref()?,
             present_creds,
             self_attested,
-            master_secret.load()?.cast_ref()?,
+            link_secret.load()?.cast_ref()?,
             &schemas.refs_map()?,
             &cred_defs.refs_map()?,
         )?;

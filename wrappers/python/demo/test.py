@@ -12,7 +12,7 @@ from indy_credx import (
     PresentationRequest,
     Presentation,
     PresentCredentials,
-    MasterSecret,
+    LinkSecret,
     RevocationRegistryDefinition,
     Schema,
 )
@@ -45,15 +45,15 @@ assert cred_def.id == f"{test_did}:3:CL:15:tag"
 ) = RevocationRegistryDefinition.create(test_did, cred_def, "default", "CL_ACCUM", 100)
 # print("Tails file hash:", rev_reg_def.tails_hash)
 
-master_secret = MasterSecret.create()
-master_secret_id = "my id"
+link_secret = LinkSecret.create()
+link_secret_id = "my id"
 
 cred_offer = CredentialOffer.create(schema.id, cred_def, key_proof)
 # print("Credential offer:")
 # print(cred_offer.to_json())
 
 cred_req, cred_req_metadata = CredentialRequest.create(
-    test_did, cred_def, master_secret, master_secret_id, cred_offer
+    test_did, cred_def, link_secret, link_secret_id, cred_offer
 )
 # print("Credential request:")
 # print(cred_req.to_json())
@@ -78,7 +78,7 @@ cred, _rev_reg_updated, _rev_delta = Credential.create(
 # print("Issued credential:")
 # print(cred.to_json())
 
-cred_received = cred.process(cred_req_metadata, master_secret, cred_def, rev_reg_def)
+cred_received = cred.process(cred_req_metadata, link_secret, cred_def, rev_reg_def)
 # print("Processed credential:")
 # print(cred_received.to_json())
 
@@ -116,7 +116,7 @@ present_creds.add_attributes(
 )
 
 presentation = Presentation.create(
-    pres_req, present_creds, {}, master_secret, [schema], [cred_def]
+    pres_req, present_creds, {}, link_secret, [schema], [cred_def]
 )
 # print(presentation.to_json())
 
@@ -156,7 +156,7 @@ present_creds.add_attributes(
     cred_received, "reft", reveal=True, timestamp=timestamp, rev_state=rev_state
 )
 presentation_2 = Presentation.create(
-    pres_req, present_creds, {}, master_secret, [schema], [cred_def]
+    pres_req, present_creds, {}, link_secret, [schema], [cred_def]
 )
 
 verified = presentation.verify(
