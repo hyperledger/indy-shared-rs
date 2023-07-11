@@ -137,7 +137,6 @@ impl From<serde_json::Error> for Error {
 
 impl From<ClError> for Error {
     fn from(err: ClError) -> Self {
-        // let message = format!("Ursa Crypto Error: {}", Fail::iter_causes(&err).map(|e| e.to_string()).collect::<String>());
         let message = err.to_string();
         let kind = match err.kind() {
             ClErrorKind::InvalidState => ErrorKind::InvalidState,
