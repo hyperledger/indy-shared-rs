@@ -1,3 +1,3 @@
 """indy_credx library wrapper version."""
 
-__version__ = "0.4.0"
+__version__ = "1.0.0"
