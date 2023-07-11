@@ -2,6 +2,7 @@ from time import time
 
 from indy_credx import (
     generate_nonce,
+    library_version,
     Credential,
     CredentialDefinition,
     CredentialOffer,
@@ -16,6 +17,7 @@ from indy_credx import (
     Schema,
 )
 
+print("credx library version:", library_version())
 
 test_did = "55GkHamhTU1ZbTbV2ab9DE"
 
@@ -71,7 +73,6 @@ cred, _rev_reg_updated, _rev_delta = Credential.create(
         rev_reg,
         issuer_rev_index,
         (),
-        rev_reg_def.tails_location,
     ),
 )
 # print("Issued credential:")
@@ -128,12 +129,22 @@ verified = presentation.verify(
 )
 assert verified
 
+# check legacy revocation proof support
+verified = presentation.verify(
+    pres_req,
+    [schema],
+    [cred_def],
+    [rev_reg_def],
+    {rev_reg_def.id: {timestamp: rev_reg}},
+    accept_legacy_revocation=True,
+)
+assert verified
 
 # rev_delta_2 = rev_reg.revoke_credential(
-#     rev_reg_def, issuer_rev_index, rev_reg_def.tails_location
+#     cred_def, rev_reg_def, rev_reg_def_private, issuer_rev_index,
 # )
 rev_delta_2 = rev_reg.update(
-    rev_reg_def, [], [issuer_rev_index], rev_reg_def.tails_location
+    cred_def, rev_reg_def, rev_reg_def_private, [], [issuer_rev_index],
 )
 
 rev_state.update(

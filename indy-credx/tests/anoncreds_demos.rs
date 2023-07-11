@@ -216,7 +216,7 @@ fn anoncreds_works_for_single_issuer_single_prover() {
 }
 
 #[test]
-fn anoncreds_works_for_twice_entry_of_credential_for_different_witness() {
+fn anoncreds_works_for_single_issuer_single_prover_unrevoked() {
     // Create Issuer pseudo wallet
     let mut issuer_wallet = IssuerWallet::default();
 
@@ -287,7 +287,6 @@ fn anoncreds_works_for_twice_entry_of_credential_for_different_witness() {
     .expect("Error creating credential request");
 
     // Issuer creates a credential
-    let tails_reader = TailsFileReader::new(&tails_path);
     let mut cred_values = MakeCredentialValues::default();
     cred_values
         .add_raw("sex", "male")
@@ -313,7 +312,6 @@ fn anoncreds_works_for_twice_entry_of_credential_for_different_witness() {
             registry: &rev_reg,
             registry_idx: 1,
             registry_used: &Default::default(),
-            tails_reader,
         }),
     )
     .expect("Error creating credential");

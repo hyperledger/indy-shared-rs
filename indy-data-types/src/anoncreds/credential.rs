@@ -14,10 +14,10 @@ pub struct Credential {
     pub cred_def_id: CredentialDefinitionId,
     pub rev_reg_id: Option<RevocationRegistryId>,
     pub values: CredentialValues,
-    pub signature: ursa_cl!(CredentialSignature),
-    pub signature_correctness_proof: ursa_cl!(SignatureCorrectnessProof),
-    pub rev_reg: Option<ursa_cl!(RevocationRegistry)>,
-    pub witness: Option<ursa_cl!(Witness)>,
+    pub signature: cl_type!(CredentialSignature),
+    pub signature_correctness_proof: cl_type!(SignatureCorrectnessProof),
+    pub rev_reg: Option<cl_type!(RevocationRegistry)>,
+    pub witness: Option<cl_type!(Witness)>,
 }
 
 #[cfg(any(feature = "cl", feature = "cl_native"))]

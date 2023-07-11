@@ -8,7 +8,7 @@ extern crate log;
 extern crate serde;
 
 #[doc(hidden)]
-pub use indy_data_types::ursa;
+pub use indy_data_types::anoncreds_clsignatures;
 
 #[macro_use]
 mod error;

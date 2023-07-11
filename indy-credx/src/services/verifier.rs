@@ -5,8 +5,8 @@ use regex::Regex;
 
 use super::helpers::*;
 use super::types::*;
+use crate::anoncreds_clsignatures::{CredentialPublicKey, Verifier as ClVerifier};
 use crate::error::Result;
-use crate::ursa::cl::{verifier::Verifier as CryptoVerifier, CredentialPublicKey};
 use indy_data_types::anoncreds::{
     nonce::Nonce,
     pres_request::{AttributeInfo, NonRevocedInterval, PredicateInfo, PresentationRequestPayload},
@@ -34,6 +34,46 @@ pub fn verify_presentation(
     cred_defs: &HashMap<CredentialDefinitionId, &CredentialDefinition>,
     rev_reg_defs: Option<&HashMap<RevocationRegistryId, &RevocationRegistryDefinition>>,
     rev_regs: Option<&HashMap<RevocationRegistryId, HashMap<u64, &RevocationRegistry>>>,
+) -> Result<bool> {
+    _verify_presentation(
+        presentation,
+        pres_req,
+        schemas,
+        cred_defs,
+        rev_reg_defs,
+        rev_regs,
+        false,
+    )
+}
+
+/// Temporary method for verifying presentations with unlinked revocation proofs
+pub fn verify_presentation_legacy(
+    presentation: &Presentation,
+    pres_req: &PresentationRequest,
+    schemas: &HashMap<SchemaId, &Schema>,
+    cred_defs: &HashMap<CredentialDefinitionId, &CredentialDefinition>,
+    rev_reg_defs: Option<&HashMap<RevocationRegistryId, &RevocationRegistryDefinition>>,
+    rev_regs: Option<&HashMap<RevocationRegistryId, HashMap<u64, &RevocationRegistry>>>,
+) -> Result<bool> {
+    _verify_presentation(
+        presentation,
+        pres_req,
+        schemas,
+        cred_defs,
+        rev_reg_defs,
+        rev_regs,
+        true,
+    )
+}
+
+pub(crate) fn _verify_presentation(
+    presentation: &Presentation,
+    pres_req: &PresentationRequest,
+    schemas: &HashMap<SchemaId, &Schema>,
+    cred_defs: &HashMap<CredentialDefinitionId, &CredentialDefinition>,
+    rev_reg_defs: Option<&HashMap<RevocationRegistryId, &RevocationRegistryDefinition>>,
+    rev_regs: Option<&HashMap<RevocationRegistryId, HashMap<u64, &RevocationRegistry>>>,
+    accept_legacy_revocation: bool,
 ) -> Result<bool> {
     trace!("verify >>> presentation: {:?}, pres_req: {:?}, schemas: {:?}, cred_defs: {:?}, rev_reg_defs: {:?} rev_regs: {:?}",
     presentation, pres_req, schemas, cred_defs, rev_reg_defs, rev_regs);
@@ -73,7 +113,8 @@ pub fn verify_presentation(
         &received_predicates,
     )?;
 
-    let mut proof_verifier = CryptoVerifier::new_proof_verifier()?;
+    let mut proof_verifier = ClVerifier::new_proof_verifier()?;
+    proof_verifier.accept_legacy_revocation(accept_legacy_revocation);
     let non_credential_schema = build_non_credential_schema()?;
 
     for sub_proof_index in 0..presentation.identifiers.len() {

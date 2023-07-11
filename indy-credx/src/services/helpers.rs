@@ -5,16 +5,13 @@ use indy_data_types::anoncreds::{
     nonce::Nonce,
     pres_request::{AttributeInfo, NonRevocedInterval, PredicateInfo},
 };
-use indy_utils::hash::SHA256;
 
-use crate::error::Result;
-use crate::ursa::{
-    bn::BigNumber,
-    cl::{
-        issuer, verifier, CredentialSchema, CredentialValues as CryptoCredentialValues,
-        MasterSecret as CryptoMasterSecret, NonCredentialSchema, SubProofRequest,
-    },
+use crate::anoncreds_clsignatures::{
+    hash_credential_attribute, CredentialSchema, CredentialValues as CryptoCredentialValues,
+    Issuer as ClIssuer, MasterSecret as CryptoMasterSecret, NonCredentialSchema, SubProofRequest,
+    Verifier as ClVerifier,
 };
+use crate::error::Result;
 
 pub fn attr_common_view(attr: &str) -> String {
     attr.replace(" ", "").to_lowercase()
@@ -23,7 +20,7 @@ pub fn attr_common_view(attr: &str) -> String {
 pub fn build_credential_schema(attrs: &HashSet<String>) -> Result<CredentialSchema> {
     trace!("build_credential_schema >>> attrs: {:?}", attrs);
 
-    let mut credential_schema_builder = issuer::Issuer::new_credential_schema_builder()?;
+    let mut credential_schema_builder = ClIssuer::new_credential_schema_builder()?;
     for attr in attrs {
         credential_schema_builder.add_attr(&attr_common_view(attr))?;
     }
@@ -38,7 +35,7 @@ pub fn build_credential_schema(attrs: &HashSet<String>) -> Result<CredentialSche
 pub fn build_non_credential_schema() -> Result<NonCredentialSchema> {
     trace!("build_non_credential_schema");
 
-    let mut non_credential_schema_builder = issuer::Issuer::new_non_credential_schema_builder()?;
+    let mut non_credential_schema_builder = ClIssuer::new_non_credential_schema_builder()?;
     non_credential_schema_builder.add_attr("master_secret")?;
     let res = non_credential_schema_builder.finalize()?;
 
@@ -55,7 +52,7 @@ pub fn build_credential_values(
         credential_values
     );
 
-    let mut credential_values_builder = issuer::Issuer::new_credential_values_builder()?;
+    let mut credential_values_builder = ClIssuer::new_credential_values_builder()?;
     for (attr, values) in credential_values {
         credential_values_builder.add_dec_known(&attr_common_view(attr), &values.encoded)?;
     }
@@ -74,14 +71,7 @@ pub fn encode_credential_attribute(raw_value: &str) -> Result<String> {
     if let Ok(val) = raw_value.parse::<i32>() {
         Ok(val.to_string())
     } else {
-        let digest = SHA256::digest(raw_value.as_bytes());
-        #[cfg(target_endian = "big")]
-        let digest = {
-            let mut d = digest;
-            d.reverse();
-            d
-        };
-        Ok(BigNumber::from_bytes(&digest)?.to_dec()?)
+        Ok(hash_credential_attribute(raw_value)?)
     }
 }
 
@@ -95,7 +85,7 @@ pub fn build_sub_proof_request(
         predicates_for_credential
     );
 
-    let mut sub_proof_request_builder = verifier::Verifier::new_sub_proof_request_builder()?;
+    let mut sub_proof_request_builder = ClVerifier::new_sub_proof_request_builder()?;
 
     for attr in attrs_for_credential {
         let names = if let Some(name) = &attr.name {
@@ -166,6 +156,74 @@ mod tests {
             from: None,
             to: Some(123),
         }
+    }
+
+    #[test]
+    fn test_encode_attribute() {
+        assert_eq!(
+            encode_credential_attribute("101 Wilson Lane").unwrap(),
+            "68086943237164982734333428280784300550565381723532936263016368251445461241953"
+        );
+        assert_eq!(encode_credential_attribute("87121").unwrap(), "87121");
+        assert_eq!(
+            encode_credential_attribute("SLC").unwrap(),
+            "101327353979588246869873249766058188995681113722618593621043638294296500696424"
+        );
+        assert_eq!(
+            encode_credential_attribute("101 Tela Lane").unwrap(),
+            "63690509275174663089934667471948380740244018358024875547775652380902762701972"
+        );
+        assert_eq!(
+            encode_credential_attribute("UT").unwrap(),
+            "93856629670657830351991220989031130499313559332549427637940645777813964461231"
+        );
+        assert_eq!(
+            encode_credential_attribute("").unwrap(),
+            "102987336249554097029535212322581322789799900648198034993379397001115665086549"
+        );
+        assert_eq!(
+            encode_credential_attribute("None").unwrap(),
+            "99769404535520360775991420569103450442789945655240760487761322098828903685777"
+        );
+        assert_eq!(encode_credential_attribute("0").unwrap(), "0");
+        assert_eq!(encode_credential_attribute("1").unwrap(), "1");
+
+        // max i32
+        assert_eq!(
+            encode_credential_attribute("2147483647").unwrap(),
+            "2147483647"
+        );
+        assert_eq!(
+            encode_credential_attribute("2147483648").unwrap(),
+            "26221484005389514539852548961319751347124425277437769688639924217837557266135"
+        );
+
+        // min i32
+        assert_eq!(
+            encode_credential_attribute("-2147483648").unwrap(),
+            "-2147483648"
+        );
+        assert_eq!(
+            encode_credential_attribute("-2147483649").unwrap(),
+            "68956915425095939579909400566452872085353864667122112803508671228696852865689"
+        );
+
+        assert_eq!(
+            encode_credential_attribute("0.0").unwrap(),
+            "62838607218564353630028473473939957328943626306458686867332534889076311281879"
+        );
+        assert_eq!(
+            encode_credential_attribute("\x00").unwrap(),
+            "49846369543417741186729467304575255505141344055555831574636310663216789168157"
+        );
+        assert_eq!(
+            encode_credential_attribute("\x01").unwrap(),
+            "34356466678672179216206944866734405838331831190171667647615530531663699592602"
+        );
+        assert_eq!(
+            encode_credential_attribute("\x02").unwrap(),
+            "99398763056634537812744552006896172984671876672520535998211840060697129507206"
+        );
     }
 
     #[test]

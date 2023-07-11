@@ -8,7 +8,7 @@ use crate::Validatable;
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Presentation {
-    pub proof: ursa_cl!(Proof),
+    pub proof: cl_type!(Proof),
     pub requested_proof: RequestedProof,
     pub identifiers: Vec<Identifier>,
 }

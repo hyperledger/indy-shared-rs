@@ -1,13 +1,9 @@
-use std::collections::{BTreeSet, HashSet};
-use std::iter::FromIterator;
+use std::collections::BTreeSet;
 
 use super::types::*;
+use crate::anoncreds_clsignatures::Issuer as ClIssuer;
 use crate::error::Result;
 use crate::services::helpers::*;
-use crate::ursa::cl::{
-    issuer::Issuer as CryptoIssuer, RevocationRegistryDelta as CryptoRevocationRegistryDelta,
-    Witness,
-};
 use indy_data_types::anoncreds::{
     cred_def::{CredentialDefinitionData, CredentialDefinitionV1},
     nonce::Nonce,
@@ -20,7 +16,7 @@ use indy_data_types::anoncreds::{
 };
 use indy_utils::{Qualifiable, Validatable};
 
-use super::tails::{TailsFileReader, TailsReader, TailsWriter};
+use super::tails::TailsWriter;
 
 pub fn create_schema(
     origin_did: &DidValue,
@@ -107,7 +103,7 @@ pub fn create_credential_definition(
     let non_credential_schema = build_non_credential_schema()?;
 
     let (credential_public_key, credential_private_key, correctness_proof) =
-        CryptoIssuer::new_credential_def(
+        ClIssuer::new_credential_def(
             &credential_schema,
             &non_credential_schema,
             config.support_revocation,
@@ -119,8 +115,8 @@ pub fn create_credential_definition(
         signature_type,
         tag: tag.to_owned(),
         value: CredentialDefinitionData {
-            primary: credential_public_key.get_primary_key()?.try_clone()?,
-            revocation: credential_public_key.get_revocation_key()?.clone(),
+            primary: credential_public_key.get_primary_key().try_clone()?,
+            revocation: credential_public_key.get_revocation_key().cloned(),
         },
     });
 
@@ -198,10 +194,12 @@ where
         "Error fetching public key from credential definition"
     ))?;
 
-    // NOTE: registry is created with issuance_by_default: false, then updated later
-    // this avoids generating the tails twice and is significantly faster
     let (revoc_key_pub, revoc_key_priv, revoc_registry, mut rev_tails_generator) =
-        CryptoIssuer::new_revocation_registry_def(&credential_pub_key, max_cred_num, false)?;
+        ClIssuer::new_revocation_registry_def(
+            &credential_pub_key,
+            max_cred_num,
+            matches!(issuance_type, IssuanceType::ISSUANCE_BY_DEFAULT),
+        )?;
 
     let rev_keys_pub = RevocationRegistryDefinitionValuePublicKeys {
         accum_key: revoc_key_pub,
@@ -230,22 +228,7 @@ where
     let revoc_reg = RevocationRegistry::RevocationRegistryV1(RevocationRegistryV1 {
         value: revoc_registry,
     });
-
-    // now update registry to reflect issuance-by-default
-    let (revoc_reg, revoc_init_delta) = if issuance_type == IssuanceType::ISSUANCE_BY_DEFAULT {
-        let tails_reader = TailsFileReader::new(&tails_location);
-        let issued = BTreeSet::from_iter((1..=max_cred_num).into_iter());
-        update_revocation_registry(
-            &revoc_reg_def,
-            &revoc_reg,
-            issued,
-            BTreeSet::new(),
-            &tails_reader,
-        )?
-    } else {
-        let delta = revoc_reg.initial_delta();
-        (revoc_reg, delta)
-    };
+    let revoc_init_delta = revoc_reg.initial_delta();
 
     let revoc_def_priv = RevocationRegistryDefinitionPrivate {
         value: revoc_key_priv,
@@ -262,12 +245,21 @@ where
 }
 
 pub fn update_revocation_registry(
+    cred_def: &CredentialDefinition,
     rev_reg_def: &RevocationRegistryDefinition,
+    rev_reg_priv: &RevocationRegistryDefinitionPrivate,
     rev_reg: &RevocationRegistry,
     issued: BTreeSet<u32>,
     revoked: BTreeSet<u32>,
-    tails_reader: &TailsReader,
 ) -> Result<(RevocationRegistry, RevocationRegistryDelta)> {
+    let cred_pub_key = match cred_def {
+        CredentialDefinition::CredentialDefinitionV1(v1) => {
+            v1.get_public_key().map_err(err_map!(
+                Unexpected,
+                "Error fetching public key from credential definition"
+            ))?
+        }
+    };
     let rev_reg_def = match rev_reg_def {
         RevocationRegistryDefinition::RevocationRegistryDefinitionV1(v1) => v1,
     };
@@ -275,12 +267,13 @@ pub fn update_revocation_registry(
         RevocationRegistry::RevocationRegistryV1(v1) => v1.value.clone(),
     };
     let max_cred_num = rev_reg_def.value.max_cred_num;
-    let delta = CryptoIssuer::update_revocation_registry(
+    let delta = ClIssuer::update_revocation_registry(
         &mut rev_reg,
         max_cred_num,
         issued,
         revoked,
-        tails_reader,
+        &cred_pub_key,
+        &rev_reg_priv.value,
     )?;
     Ok((
         RevocationRegistry::RevocationRegistryV1(RevocationRegistryV1 { value: rev_reg }),
@@ -335,13 +328,10 @@ pub fn create_credential(
             cred_def, secret!(&cred_def_private), &cred_offer.nonce, &cred_request, secret!(&cred_values), revocation_config,
             );
 
-    let cred_public_key = match cred_def {
-        CredentialDefinition::CredentialDefinitionV1(cd) => {
-            cd.get_public_key().map_err(err_map!(
-                Unexpected,
-                "Error fetching public key from credential definition"
-            ))?
-        }
+    let cred_rev_pub_key = match cred_def {
+        CredentialDefinition::CredentialDefinitionV1(cd) => cd.get_public_key().map_err(
+            err_map!(Input, "Credential definition does not support revocation"),
+        )?,
     };
     let credential_values = build_credential_values(&cred_values.0, None)?;
 
@@ -362,44 +352,26 @@ pub fn create_credential(
             let mut rev_reg = match revocation.registry {
                 RevocationRegistry::RevocationRegistryV1(v1) => v1.value.clone(),
             };
-            let (credential_signature, signature_correctness_proof, delta) =
-                CryptoIssuer::sign_credential_with_revoc(
+            let (credential_signature, signature_correctness_proof, witness, delta) =
+                ClIssuer::sign_credential_with_revoc(
                     &cred_request.prover_did.0,
                     &cred_request.blinded_ms,
                     &cred_request.blinded_ms_correctness_proof,
                     cred_offer.nonce.as_native(),
                     cred_request.nonce.as_native(),
                     &credential_values,
-                    &cred_public_key,
+                    &cred_rev_pub_key,
                     &cred_def_private.value,
                     revocation.registry_idx,
                     rev_reg_def.max_cred_num,
                     rev_reg_def.issuance_type.to_bool(),
                     &mut rev_reg,
                     &revocation.reg_def_private.value,
-                    &revocation.tails_reader,
                 )?;
 
             let cred_rev_reg_id = match cred_offer.method_name.as_ref() {
                 Some(ref _method_name) => Some(reg_reg_id.to_unqualified()),
                 _ => Some(reg_reg_id.clone()),
-            };
-            let witness = {
-                let empty = HashSet::new();
-                let (by_default, issued, revoked) = match rev_reg_def.issuance_type {
-                    IssuanceType::ISSUANCE_ON_DEMAND => (false, revocation.registry_used, &empty),
-                    IssuanceType::ISSUANCE_BY_DEFAULT => (true, &empty, revocation.registry_used),
-                };
-
-                let rev_reg_delta =
-                    CryptoRevocationRegistryDelta::from_parts(None, &rev_reg, issued, revoked);
-                Witness::new(
-                    revocation.registry_idx,
-                    rev_reg_def.max_cred_num,
-                    by_default,
-                    &rev_reg_delta,
-                    &revocation.tails_reader,
-                )?
             };
             (
                 credential_signature,
@@ -411,14 +383,14 @@ pub fn create_credential(
             )
         }
         None => {
-            let (signature, correctness_proof) = CryptoIssuer::sign_credential(
+            let (signature, correctness_proof) = ClIssuer::sign_credential(
                 &cred_request.prover_did.0,
                 &cred_request.blinded_ms,
                 &cred_request.blinded_ms_correctness_proof,
                 cred_offer.nonce.as_native(),
                 cred_request.nonce.as_native(),
                 &credential_values,
-                &cred_public_key,
+                &cred_rev_pub_key,
                 &cred_def_private.value,
             )?;
             (signature, correctness_proof, None, None, None, None)
@@ -454,10 +426,11 @@ pub fn create_credential(
 }
 
 pub fn revoke_credential(
+    cred_def: &CredentialDefinition,
     rev_reg_def: &RevocationRegistryDefinition,
+    rev_reg_def_private: &RevocationRegistryDefinitionPrivate,
     rev_reg: &RevocationRegistry,
     cred_rev_idx: u32,
-    tails_reader: &TailsReader,
 ) -> Result<(RevocationRegistry, RevocationRegistryDelta)> {
     trace!(
         "revoke >>> rev_reg_def: {:?}, rev_reg: {:?}, cred_rev_idx: {:?}",
@@ -466,14 +439,27 @@ pub fn revoke_credential(
         secret!(&cred_rev_idx)
     );
 
-    let max_cred_num = match rev_reg_def {
-        RevocationRegistryDefinition::RevocationRegistryDefinitionV1(v1) => v1.value.max_cred_num,
+    let cred_pub_key = match cred_def {
+        CredentialDefinition::CredentialDefinitionV1(v1) => {
+            v1.get_public_key().map_err(err_map!(
+                Unexpected,
+                "Error fetching public key from credential definition"
+            ))?
+        }
+    };
+    let rev_reg_def = match rev_reg_def {
+        RevocationRegistryDefinition::RevocationRegistryDefinitionV1(v1) => &v1.value,
     };
     let mut rev_reg = match rev_reg {
         RevocationRegistry::RevocationRegistryV1(v1) => v1.value.clone(),
     };
-    let rev_reg_delta =
-        CryptoIssuer::revoke_credential(&mut rev_reg, max_cred_num, cred_rev_idx, tails_reader)?;
+    let rev_reg_delta = ClIssuer::revoke_credential(
+        &mut rev_reg,
+        rev_reg_def.max_cred_num,
+        cred_rev_idx,
+        &cred_pub_key,
+        &rev_reg_def_private.value,
+    )?;
 
     let new_rev_reg =
         RevocationRegistry::RevocationRegistryV1(RevocationRegistryV1 { value: rev_reg });
@@ -486,11 +472,12 @@ pub fn revoke_credential(
 }
 
 #[allow(dead_code)]
-pub fn recover_credential(
+pub fn unrevoke_credential(
+    cred_def: &CredentialDefinition,
     rev_reg_def: &RevocationRegistryDefinition,
+    rev_reg_priv: &RevocationRegistryDefinitionPrivate,
     rev_reg: &RevocationRegistry,
     cred_rev_idx: u32,
-    tails_reader: &TailsReader,
 ) -> Result<(RevocationRegistry, RevocationRegistryDelta)> {
     trace!(
         "recover >>> rev_reg_def: {:?}, rev_reg: {:?}, cred_rev_idx: {:?}",
@@ -499,14 +486,27 @@ pub fn recover_credential(
         secret!(&cred_rev_idx)
     );
 
+    let cred_pub_key = match cred_def {
+        CredentialDefinition::CredentialDefinitionV1(v1) => {
+            v1.get_public_key().map_err(err_map!(
+                Unexpected,
+                "Error fetching public key from credential definition"
+            ))?
+        }
+    };
     let max_cred_num = match rev_reg_def {
         RevocationRegistryDefinition::RevocationRegistryDefinitionV1(v1) => v1.value.max_cred_num,
     };
     let mut rev_reg = match rev_reg {
         RevocationRegistry::RevocationRegistryV1(v1) => v1.value.clone(),
     };
-    let rev_reg_delta =
-        CryptoIssuer::recovery_credential(&mut rev_reg, max_cred_num, cred_rev_idx, tails_reader)?;
+    let rev_reg_delta = ClIssuer::unrevoke_credential(
+        &mut rev_reg,
+        max_cred_num,
+        cred_rev_idx,
+        &cred_pub_key,
+        &rev_reg_priv.value,
+    )?;
 
     let new_rev_reg =
         RevocationRegistry::RevocationRegistryV1(RevocationRegistryV1 { value: rev_reg });
@@ -531,78 +531,5 @@ pub fn merge_revocation_registry_deltas(
             result.value.merge(&other.value)?;
             Ok(RevocationRegistryDelta::RevocationRegistryDeltaV1(result))
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_encode_attribute() {
-        assert_eq!(
-            encode_credential_attribute("101 Wilson Lane").unwrap(),
-            "68086943237164982734333428280784300550565381723532936263016368251445461241953"
-        );
-        assert_eq!(encode_credential_attribute("87121").unwrap(), "87121");
-        assert_eq!(
-            encode_credential_attribute("SLC").unwrap(),
-            "101327353979588246869873249766058188995681113722618593621043638294296500696424"
-        );
-        assert_eq!(
-            encode_credential_attribute("101 Tela Lane").unwrap(),
-            "63690509275174663089934667471948380740244018358024875547775652380902762701972"
-        );
-        assert_eq!(
-            encode_credential_attribute("UT").unwrap(),
-            "93856629670657830351991220989031130499313559332549427637940645777813964461231"
-        );
-        assert_eq!(
-            encode_credential_attribute("").unwrap(),
-            "102987336249554097029535212322581322789799900648198034993379397001115665086549"
-        );
-        assert_eq!(
-            encode_credential_attribute("None").unwrap(),
-            "99769404535520360775991420569103450442789945655240760487761322098828903685777"
-        );
-        assert_eq!(encode_credential_attribute("0").unwrap(), "0");
-        assert_eq!(encode_credential_attribute("1").unwrap(), "1");
-
-        // max i32
-        assert_eq!(
-            encode_credential_attribute("2147483647").unwrap(),
-            "2147483647"
-        );
-        assert_eq!(
-            encode_credential_attribute("2147483648").unwrap(),
-            "26221484005389514539852548961319751347124425277437769688639924217837557266135"
-        );
-
-        // min i32
-        assert_eq!(
-            encode_credential_attribute("-2147483648").unwrap(),
-            "-2147483648"
-        );
-        assert_eq!(
-            encode_credential_attribute("-2147483649").unwrap(),
-            "68956915425095939579909400566452872085353864667122112803508671228696852865689"
-        );
-
-        assert_eq!(
-            encode_credential_attribute("0.0").unwrap(),
-            "62838607218564353630028473473939957328943626306458686867332534889076311281879"
-        );
-        assert_eq!(
-            encode_credential_attribute("\x00").unwrap(),
-            "49846369543417741186729467304575255505141344055555831574636310663216789168157"
-        );
-        assert_eq!(
-            encode_credential_attribute("\x01").unwrap(),
-            "34356466678672179216206944866734405838331831190171667647615530531663699592602"
-        );
-        assert_eq!(
-            encode_credential_attribute("\x02").unwrap(),
-            "99398763056634537812744552006896172984671876672520535998211840060697129507206"
-        );
     }
 }

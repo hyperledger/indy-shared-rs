@@ -2,17 +2,17 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
-#[cfg(any(feature = "cl", feature = "cl_native"))]
-use crate::ursa::cl::{new_nonce, Nonce as UrsaNonce};
 #[cfg(feature = "serde")]
 use serde::{de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 
+#[cfg(any(feature = "cl", feature = "cl_native"))]
+use crate::anoncreds_clsignatures::{new_nonce, Nonce as ClNonce};
 use crate::ConversionError;
 
 pub struct Nonce {
     strval: String,
     #[cfg(any(feature = "cl", feature = "cl_native"))]
-    native: UrsaNonce,
+    native: ClNonce,
 }
 
 impl Nonce {
@@ -26,20 +26,20 @@ impl Nonce {
 
     #[cfg(any(feature = "cl", feature = "cl_native"))]
     #[inline]
-    pub fn from_native(native: UrsaNonce) -> Result<Self, ConversionError> {
+    pub fn from_native(native: ClNonce) -> Result<Self, ConversionError> {
         let strval = native.to_dec().map_err(|e| e.to_string())?;
         Ok(Self { strval, native })
     }
 
     #[cfg(any(feature = "cl", feature = "cl_native"))]
     #[inline]
-    pub fn as_native(&self) -> &UrsaNonce {
+    pub fn as_native(&self) -> &ClNonce {
         &self.native
     }
 
     #[cfg(any(feature = "cl", feature = "cl_native"))]
     #[inline]
-    pub fn into_native(self) -> UrsaNonce {
+    pub fn into_native(self) -> ClNonce {
         self.native
     }
 
@@ -55,7 +55,7 @@ impl Nonce {
         }
         #[cfg(any(feature = "cl", feature = "cl_native"))]
         {
-            let native = UrsaNonce::from_dec(&strval).map_err(|e| e.to_string())?;
+            let native = ClNonce::from_dec(&strval).map_err(|e| e.to_string())?;
             Ok(Self { strval, native })
         }
         #[cfg(not(any(feature = "cl", feature = "cl_native")))]
@@ -226,7 +226,6 @@ mod tests {
             "1a",
         ];
         for v in invalid.iter() {
-            println!("try {}", v);
             assert!(Nonce::try_from(*v).is_err())
         }
     }
@@ -244,11 +243,11 @@ mod tests {
     #[cfg(all(feature = "serde", any(feature = "cl", feature = "cl_native")))]
     #[test]
     fn nonce_convert() {
-        let nonce = UrsaNonce::new().expect("Error creating nonce");
+        let nonce = ClNonce::new().expect("Error creating nonce");
         let ser = serde_json::to_string(&nonce).unwrap();
         let des = serde_json::from_str::<Nonce>(&ser).unwrap();
         let ser2 = serde_json::to_string(&des).unwrap();
-        let nonce_des = serde_json::from_str::<UrsaNonce>(&ser2).unwrap();
+        let nonce_des = serde_json::from_str::<ClNonce>(&ser2).unwrap();
         assert_eq!(nonce, nonce_des);
 
         let nonce = Nonce::new().unwrap();
