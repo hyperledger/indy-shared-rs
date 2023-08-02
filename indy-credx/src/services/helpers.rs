@@ -8,7 +8,7 @@ use indy_data_types::anoncreds::{
 
 use crate::anoncreds_clsignatures::{
     hash_credential_attribute, CredentialSchema, CredentialValues as ClCredentialValues,
-    Issuer as ClIssuer, MasterSecret as ClMasterSecret, NonCredentialSchema, SubProofRequest,
+    Issuer as ClIssuer, LinkSecret as ClLinkSecret, NonCredentialSchema, SubProofRequest,
     Verifier as ClVerifier,
 };
 use crate::error::Result;
@@ -45,7 +45,7 @@ pub fn build_non_credential_schema() -> Result<NonCredentialSchema> {
 
 pub fn build_credential_values(
     credential_values: &HashMap<String, AttributeValues>,
-    link_secret: Option<&ClMasterSecret>,
+    link_secret: Option<&ClLinkSecret>,
 ) -> Result<ClCredentialValues> {
     trace!(
         "build_credential_values >>> credential_values: {:?}",

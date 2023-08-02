@@ -1,13 +1,13 @@
 pub use sha2::Digest;
 
-use super::ValidationError;
+use crate::ValidationError;
 
 /// Derive a new hash type
 #[macro_export]
 macro_rules! hash_type {
     ($modname:ident, $digest:path, $doc:expr) => {
         #[doc=$doc]
-        #[allow(non_snake_case)]
+        #[allow(non_snake_case, unused)]
         pub mod $modname {
             use once_cell::sync::Lazy;
             use sha2::Digest;
