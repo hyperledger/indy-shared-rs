@@ -1,5 +1,4 @@
-use indy_utils::hash::{TreeHash, SHA256::DigestType as Hash};
-
+use super::hash::{TreeHash, SHA256::DigestType as Hash};
 use super::tree::{Tree, TreeLeafData};
 use crate::ValidationError;
 

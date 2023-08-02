@@ -16,9 +16,8 @@ path = "src/lib.rs"
 crate-type = ["rlib"]
 
 [features]
-default = ["ed25519", "hash"]
+default = ["ed25519"]
 ed25519 = ["curve25519-dalek", "ed25519-dalek", "rand", "sha2", "x25519-dalek"]
-hash = ["sha2"]
 
 [dependencies]
 bs58 = "0.5"

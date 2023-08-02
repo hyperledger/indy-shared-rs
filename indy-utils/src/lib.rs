@@ -27,7 +27,3 @@ pub mod did;
 
 /// Indy signing keys and verification keys
 pub mod keys;
-
-/// Hash algorithms
-#[cfg(feature = "hash")]
-pub mod hash;

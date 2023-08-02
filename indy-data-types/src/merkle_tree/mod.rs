@@ -1,11 +1,11 @@
-use indy_utils::hash::{TreeHash, SHA256::DigestType as Hash};
-
+use self::hash::{TreeHash, SHA256::DigestType as Hash};
 use self::tree::{Tree, TreeLeafData};
 use crate::ValidationError;
 
 pub use self::merkletree::MerkleTree;
 pub use self::proof::Positioned;
 
+mod hash;
 mod merkletree;
 mod proof;
 mod tree;
