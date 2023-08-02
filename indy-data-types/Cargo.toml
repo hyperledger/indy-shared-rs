@@ -1,6 +1,6 @@
 [package]
 name = "indy-data-types"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Hyperledger Indy Contributors <indy@lists.hyperledger.org>"]
 description = "Common data types for Hyperledger Indy (https://www.hyperledger.org/projects), which provides a distributed-ledger-based foundation for self-sovereign identity (https://sovrin.org)."
 edition = "2021"
@@ -16,25 +16,31 @@ path = "src/lib.rs"
 crate-type = ["rlib"]
 
 [features]
-default = ["serde_support", "cl_native"]
-cl = ["serde_support"]
-cl_native = ["serde_support", "anoncreds-clsignatures/openssl_bn"]
+default = ["anoncreds", "merkle_tree"]
+anoncreds = ["serde_support"]
+cl = ["anoncreds", "anoncreds-clsignatures", "serde_support"]
+cl_native = ["anoncreds", "anoncreds-clsignatures/openssl_bn", "serde_support"]
 merkle_tree = ["indy-utils/hash", "hex"]
 rich_schema = []
-serde_support = ["serde", "serde_json", "anoncreds-clsignatures?/serde", "indy-utils/serde"]
+serde_support = [
+    "serde",
+    "serde_json",
+    "anoncreds-clsignatures?/serde",
+    "indy-utils/serde",
+]
 vendored = ["anoncreds-clsignatures?/openssl_vendored"]
 
 [dependencies]
-anoncreds-clsignatures = { version = "0.1", optional = true }
+anoncreds-clsignatures = { version = "0.2", optional = true }
 hex = { version = "0.4", optional = true }
 once_cell = "1"
 regex = "1"
 serde = { version = "1.0", optional = true, features = ["derive"] }
 serde_json = { version = "1.0", optional = true, features = ["raw_value"] }
 zeroize = { version = "1", features = ["zeroize_derive"] }
-
+rmp-serde = "1.0"
 [dependencies.indy-utils]
-version = "0.5"
+version = "0.6"
 path = "../indy-utils"
 default-features = false
 

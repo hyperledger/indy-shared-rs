@@ -2,20 +2,20 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
-use crate::anoncreds_clsignatures::{MasterSecret as ClMasterSecret, Prover as ClProver};
+use crate::anoncreds_clsignatures::{LinkSecret as ClLinkSecret, Prover as ClProver};
 use crate::ConversionError;
 
 #[derive(Serialize, Deserialize)]
 pub struct LinkSecret {
-    pub value: ClMasterSecret,
+    pub value: ClLinkSecret,
 }
 
 impl LinkSecret {
     #[cfg(any(feature = "cl", feature = "cl_native"))]
     #[inline]
     pub fn new() -> Result<Self, ConversionError> {
-        let value = ClProver::new_master_secret().map_err(|err| {
-            ConversionError::from_msg(format!("Error creating master secret: {}", err))
+        let value = ClProver::new_link_secret().map_err(|err| {
+            ConversionError::from_msg(format!("Error creating link secret: {}", err))
         })?;
         Ok(Self { value })
     }

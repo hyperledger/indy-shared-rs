@@ -1,3 +1,4 @@
+#[cfg(any(feature = "cl", feature = "cl_native"))]
 use crate::anoncreds_clsignatures::CredentialPublicKey;
 use crate::identifiers::cred_def::CredentialDefinitionId;
 use crate::identifiers::schema::SchemaId;
