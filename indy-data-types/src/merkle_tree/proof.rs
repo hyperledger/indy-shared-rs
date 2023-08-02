@@ -46,13 +46,13 @@ impl Proof {
 
                 Some(Positioned::Left(ref hash)) => {
                     let combined = Hash::hash_nodes(hash, &sub.node_hash)?;
-                    let hashes_match = combined.to_vec().as_slice() == lemma.node_hash.as_slice();
+                    let hashes_match = combined == lemma.node_hash;
                     Ok(hashes_match && self.validate_lemma(sub)?)
                 }
 
                 Some(Positioned::Right(ref hash)) => {
                     let combined = Hash::hash_nodes(&sub.node_hash, hash)?;
-                    let hashes_match = combined.to_vec().as_slice() == lemma.node_hash.as_slice();
+                    let hashes_match = combined == lemma.node_hash;
                     Ok(hashes_match && self.validate_lemma(sub)?)
                 }
             },
