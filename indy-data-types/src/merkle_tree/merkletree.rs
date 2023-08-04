@@ -1,8 +1,7 @@
-use indy_utils::hash::{
+use super::hash::{
     TreeHash,
     SHA256::{digest_empty, DigestType as Hash},
 };
-
 use super::proof::{Lemma, Proof};
 use super::tree::{LeavesIntoIterator, LeavesIterator, Tree, TreeLeafData};
 use crate::ValidationError;

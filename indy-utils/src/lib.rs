@@ -27,15 +27,3 @@ pub mod did;
 
 /// Indy signing keys and verification keys
 pub mod keys;
-
-/// Base64 encoding and decoding
-#[cfg(feature = "base64")]
-pub mod base64;
-
-/// Hash algorithms
-#[cfg(feature = "hash")]
-pub mod hash;
-
-/// Generation of normalized ledger transaction for signing
-#[cfg(feature = "txn_signature")]
-pub mod txn_signature;

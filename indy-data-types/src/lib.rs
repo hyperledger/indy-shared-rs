@@ -21,6 +21,7 @@ pub use indy_utils::{invalid, ConversionError, Validatable, ValidationError};
 #[cfg(any(feature = "cl", feature = "cl_native"))]
 pub use anoncreds_clsignatures;
 
+#[cfg(feature = "anoncreds")]
 /// Type definitions related Indy credential issuance and verification
 pub mod anoncreds;
 

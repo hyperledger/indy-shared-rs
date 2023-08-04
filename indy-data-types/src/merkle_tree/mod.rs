@@ -1,11 +1,12 @@
-use indy_utils::hash::{TreeHash, SHA256::DigestType as Hash};
-
+use self::hash::{TreeHash, SHA256::DigestType as Hash};
 use self::tree::{Tree, TreeLeafData};
 use crate::ValidationError;
 
-mod merkletree;
 pub use self::merkletree::MerkleTree;
+pub use self::proof::Positioned;
 
+mod hash;
+mod merkletree;
 mod proof;
 mod tree;
 
@@ -198,6 +199,25 @@ impl MerkleTree {
             self.height += 1;
         }
         Ok(())
+    }
+
+    pub fn check_inclusion_proof(
+        root_hash: &[u8],
+        leaf_value: &TreeLeafData,
+        path: &[Positioned<TreeLeafData>],
+    ) -> Result<bool, ValidationError> {
+        let mut check_hash = Hash::hash_leaf(leaf_value)?;
+        for node in path {
+            match node {
+                Positioned::Left(data) => {
+                    check_hash = Hash::hash_nodes(data, &check_hash)?;
+                }
+                Positioned::Right(data) => {
+                    check_hash = Hash::hash_nodes(&check_hash, data)?;
+                }
+            }
+        }
+        Ok(check_hash == root_hash)
     }
 }
 
@@ -442,5 +462,28 @@ mod tests {
         assert!(mt
             .consistency_proof(&full_root_hash, 8, &proofs_for_8)
             .unwrap());
+    }
+
+    #[test]
+    fn check_inclusion_proof_works() {
+        let nodes = [
+            (true, "Gf9aBhHCtBpTYbJXQWnt1DU8q33hwi6nN4f3NhnsBgMZ"),
+            (false, "68TGAdRjeQ29eNcuFYhsX5uLakGQLgKMKp5wSyPzt9Nq"),
+            (true, "25KLEkkyCEPSBj4qMFE3AcH87mFocyJEuPJ5xzPGwDgz"),
+        ];
+        let path: Vec<Positioned<Vec<u8>>> = nodes
+            .iter()
+            .map(|(side, val)| {
+                let val = base58::decode(val).unwrap();
+                if *side {
+                    Positioned::Right(val)
+                } else {
+                    Positioned::Left(val)
+                }
+            })
+            .collect();
+        let root_hash = base58::decode("CrA5sqYe3ruf2uY7d8re7ePmyHqptHqANtMZcfZd4BvK").unwrap();
+        let leaf_value = b"\x81\xa13\xa13".to_vec(); // {"3":"3"} serialized via rmp
+        assert!(MerkleTree::check_inclusion_proof(&root_hash, &leaf_value, &path).unwrap());
     }
 }
