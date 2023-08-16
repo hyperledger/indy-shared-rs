@@ -18,7 +18,7 @@ use indy_data_types::anoncreds::{
 };
 use indy_utils::{Qualifiable, Validatable};
 
-use super::tails::TailsReader;
+use super::tails::TailsFileReader;
 
 pub fn create_link_secret() -> Result<LinkSecret> {
     LinkSecret::new().map_err(err_map!(Unexpected))
@@ -254,7 +254,7 @@ pub fn create_presentation(
 }
 
 pub fn create_or_update_revocation_state(
-    tails_reader: TailsReader,
+    tails_reader: TailsFileReader,
     revoc_reg_def: &RevocationRegistryDefinition,
     rev_reg_delta: &RevocationRegistryDelta,
     rev_reg_idx: u32,
