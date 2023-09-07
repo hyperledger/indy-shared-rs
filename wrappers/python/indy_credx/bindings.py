@@ -447,7 +447,7 @@ def _load_library(lib_name: str) -> CDLL:
     lib_path = find_library(lib_name)
     if not lib_path:
         raise CredxError(
-            CredxErrorCode.WRAPPER, f"Library not found in path: {lib_path}"
+            CredxErrorCode.WRAPPER, f"Library not found in path: {lib_name}"
         )
     try:
         return CDLL(lib_path)
