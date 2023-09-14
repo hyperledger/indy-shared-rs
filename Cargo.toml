@@ -1,11 +1,6 @@
 [workspace]
 
-members = [
-    "indy-credx",
-    "indy-data-types",
-    "indy-test-utils",
-    "indy-utils"
-]
+members = ["indy-credx", "indy-data-types"]
 
 [profile.release]
 panic = "abort"
