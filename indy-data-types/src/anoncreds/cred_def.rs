@@ -2,8 +2,7 @@
 use crate::anoncreds_clsignatures::CredentialPublicKey;
 use crate::identifiers::cred_def::CredentialDefinitionId;
 use crate::identifiers::schema::SchemaId;
-use crate::utils::Qualifiable;
-use crate::{ConversionError, Validatable, ValidationError};
+use crate::{ConversionError, Qualifiable, Validatable, ValidationError};
 
 pub const CL_SIGNATURE_TYPE: &str = "CL";
 

@@ -1,7 +1,6 @@
 use crate::identifiers::cred_def::CredentialDefinitionId;
 use crate::identifiers::rev_reg::RevocationRegistryId;
-use crate::utils::Qualifiable;
-use crate::{invalid, ConversionError, Validatable, ValidationError};
+use crate::{invalid, ConversionError, Qualifiable, Validatable, ValidationError};
 
 pub const CL_ACCUM: &str = "CL_ACCUM";
 

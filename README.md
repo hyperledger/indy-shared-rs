@@ -6,10 +6,6 @@ Shared Rust libraries for Hyperledger Indy.
 
 - `indy-data-types`: Data type definitions for Schemas, Credential Definitions and other types related to credential issuance and processing.
 
-- `indy-test-utils`: Utilities for use in integration tests.
-
-- `indy-utils`: Standard wrappers around binary data encodings. Includes support for normalizing transactions for signing, deriving DIDs and verification keys.
-
 ## Credit
 
 The initial implementation of `indy-shared-rs` was developed by the Verifiable Organizations Network (VON) team based at the Province of British Columbia, and derives largely from the implementations within [Hyperledger Indy-SDK](https://github.com/hyperledger/indy-sdk). To learn more about VON and what's happening with decentralized identity in British Columbia, please go to [https://vonx.io](https://vonx.io).

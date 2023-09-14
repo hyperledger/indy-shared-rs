@@ -19,10 +19,9 @@ pub use indy_data_types::{
         },
         schema::{AttributeNames, Schema},
     },
-    CredentialDefinitionId, RevocationRegistryId, SchemaId,
+    did::DidValue,
+    invalid, CredentialDefinitionId, RevocationRegistryId, SchemaId, Validatable, ValidationError,
 };
-pub use indy_utils::did::DidValue;
-use indy_utils::{invalid, Validatable, ValidationError};
 
 use crate::anoncreds_clsignatures::{RevocationRegistry as CryptoRevocationRegistry, Witness};
 use crate::error::Error;

@@ -4,10 +4,9 @@ use regex::Regex;
 
 use super::cred_def::CredentialDefinitionId;
 use super::DELIMITER;
-use crate::utils::{qualifiable, Qualifiable};
+use crate::did::DidValue;
+use crate::qualifiable::{self, qualifiable_type, Qualifiable};
 use crate::{Validatable, ValidationError};
-use indy_utils::did::DidValue;
-use indy_utils::qualifiable_type;
 
 static QUALIFIED_REV_REG_ID: Lazy<Regex> = Lazy::new(|| {
     Regex::new("(^revreg:(?P<method>[a-z0-9]+):)?(?P<did>.+):4:(?P<cred_def_id>.+):(?P<rev_reg_type>.+):(?P<tag>.+)$").unwrap()

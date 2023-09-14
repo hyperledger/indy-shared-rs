@@ -14,7 +14,7 @@ use indy_data_types::anoncreds::{
     },
     schema::SchemaV1,
 };
-use indy_utils::{Qualifiable, Validatable};
+use indy_data_types::{Qualifiable, Validatable};
 
 use super::tails::TailsWriter;
 

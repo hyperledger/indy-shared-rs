@@ -1,6 +1,5 @@
 use crate::identifiers::schema::SchemaId;
-use crate::utils::Qualifiable;
-use crate::{Validatable, ValidationError};
+use crate::{Qualifiable, Validatable, ValidationError};
 
 use std::collections::HashSet;
 use std::iter::FromIterator;

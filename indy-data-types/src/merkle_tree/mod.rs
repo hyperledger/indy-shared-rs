@@ -10,6 +10,15 @@ mod merkletree;
 mod proof;
 mod tree;
 
+macro_rules! unwrap_opt_or_return {
+    ($opt:expr, $err:expr) => {
+        match $opt {
+            Some(val) => val,
+            None => return $err,
+        }
+    };
+}
+
 impl MerkleTree {
     fn count_bits(v: usize) -> usize {
         let mut ret = 0;

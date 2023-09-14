@@ -1,7 +1,6 @@
-use crate::utils::{qualifiable, Qualifiable};
-use crate::{Validatable, ValidationError};
-use indy_utils::did::DidValue;
-use indy_utils::qualifiable_type;
+use crate::did::DidValue;
+use crate::qualifiable::{self, qualifiable_type};
+use crate::{Qualifiable, Validatable, ValidationError};
 
 use super::DELIMITER;
 

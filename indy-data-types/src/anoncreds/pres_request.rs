@@ -13,9 +13,8 @@ use crate::did::DidValue;
 use crate::identifiers::cred_def::CredentialDefinitionId;
 use crate::identifiers::rev_reg::RevocationRegistryId;
 use crate::identifiers::schema::SchemaId;
-use crate::invalid;
-use crate::utils::{qualifiable, Qualifiable};
-use crate::{Validatable, ValidationError};
+use crate::qualifiable::{self, Qualifiable};
+use crate::{invalid, Validatable, ValidationError};
 
 #[derive(Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
