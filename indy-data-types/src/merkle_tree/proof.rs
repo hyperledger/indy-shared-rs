@@ -32,30 +32,29 @@ impl Proof {
         if self.root_hash != root_hash || self.lemma.node_hash != root_hash {
             return Ok(false);
         }
-
-        Ok(self.validate_lemma(&self.lemma)?)
+        _validate_lemma(&self.lemma)
     }
+}
 
-    fn validate_lemma(&self, lemma: &Lemma) -> Result<bool, ValidationError> {
-        match lemma.sub_lemma {
-            None => Ok(lemma.sibling_hash.is_none()),
+fn _validate_lemma(lemma: &Lemma) -> Result<bool, ValidationError> {
+    match lemma.sub_lemma {
+        None => Ok(lemma.sibling_hash.is_none()),
 
-            Some(ref sub) => match lemma.sibling_hash {
-                None => Ok(false),
+        Some(ref sub) => match lemma.sibling_hash {
+            None => Ok(false),
 
-                Some(Positioned::Left(ref hash)) => {
-                    let combined = Hash::hash_nodes(hash, &sub.node_hash)?;
-                    let hashes_match = combined == lemma.node_hash;
-                    Ok(hashes_match && self.validate_lemma(sub)?)
-                }
+            Some(Positioned::Left(ref hash)) => {
+                let combined = Hash::hash_nodes(hash, &sub.node_hash)?;
+                let hashes_match = combined == lemma.node_hash;
+                Ok(hashes_match && _validate_lemma(sub)?)
+            }
 
-                Some(Positioned::Right(ref hash)) => {
-                    let combined = Hash::hash_nodes(&sub.node_hash, hash)?;
-                    let hashes_match = combined == lemma.node_hash;
-                    Ok(hashes_match && self.validate_lemma(sub)?)
-                }
-            },
-        }
+            Some(Positioned::Right(ref hash)) => {
+                let combined = Hash::hash_nodes(&sub.node_hash, hash)?;
+                let hashes_match = combined == lemma.node_hash;
+                Ok(hashes_match && _validate_lemma(sub)?)
+            }
+        },
     }
 }
 

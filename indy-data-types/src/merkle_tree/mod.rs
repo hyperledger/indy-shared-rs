@@ -32,10 +32,7 @@ impl MerkleTree {
 
     pub fn find_hash<'a>(from: &'a Tree, required_hash: &Vec<u8>) -> Option<&'a Tree> {
         match *from {
-            Tree::Empty { .. } => {
-                assert!(false);
-                None
-            }
+            Tree::Empty { .. } => None,
             Tree::Node {
                 ref left,
                 ref right,
@@ -72,7 +69,7 @@ impl MerkleTree {
         &self,
         new_root_hash: &Vec<u8>,
         new_size: usize,
-        proof: &Vec<Vec<u8>>,
+        proof: &[Vec<u8>],
     ) -> Result<bool, ValidationError> {
         if self.count == 0 {
             // empty old tree
@@ -84,7 +81,6 @@ impl MerkleTree {
         }
         if self.count > new_size {
             // old tree is bigger!
-            assert!(false);
             return Ok(false);
         }
 
@@ -171,7 +167,7 @@ impl MerkleTree {
                     self.nodes_count += 1;
                 }
                 _ => {
-                    assert!(false);
+                    unreachable!();
                 }
             }
         } else {
@@ -202,7 +198,7 @@ impl MerkleTree {
                     self.nodes_count += 1;
                 }
                 _ => {
-                    assert!(false);
+                    unreachable!();
                 }
             }
             self.height += 1;
@@ -321,9 +317,9 @@ mod tests {
         assert!(mt
             .consistency_proof(
                 &vec![
-                    0x77 as u8, 0xf1, 0x5a, 0x58, 0x07, 0xfd, 0xaa, 0x56, 0x51, 0x28, 0xc5, 0x8f,
-                    0x59, 0x1f, 0x4f, 0x03, 0x25, 0x81, 0xfe, 0xe7, 0xd8, 0x61, 0x99, 0xae, 0xf8,
-                    0xae, 0xac, 0x7b, 0x05, 0x80, 0xbe, 0x0a
+                    0x77u8, 0xf1, 0x5a, 0x58, 0x07, 0xfd, 0xaa, 0x56, 0x51, 0x28, 0xc5, 0x8f, 0x59,
+                    0x1f, 0x4f, 0x03, 0x25, 0x81, 0xfe, 0xe7, 0xd8, 0x61, 0x99, 0xae, 0xf8, 0xae,
+                    0xac, 0x7b, 0x05, 0x80, 0xbe, 0x0a
                 ],
                 4,
                 &proofs
@@ -344,11 +340,9 @@ mod tests {
 
         let proofs: Vec<Vec<u8>> = vec![];
 
-        assert_eq!(
-            false,
-            mt.consistency_proof(&vec![0x77 as u8, 0xf1, 0x5a], 4, &proofs)
-                .unwrap()
-        );
+        assert!(!mt
+            .consistency_proof(&vec![0x77u8, 0xf1, 0x5a], 4, &proofs)
+            .unwrap());
     }
 
     #[test]
@@ -364,7 +358,7 @@ mod tests {
         for value in values {
             let proof = tree.gen_proof(value).unwrap();
             let is_valid = proof
-                .map(|p| p.validate(&root_hash).unwrap())
+                .map(|p| p.validate(root_hash).unwrap())
                 .unwrap_or(false);
 
             assert!(is_valid);
@@ -428,7 +422,7 @@ mod tests {
         //add 5th node
         mt.append(all_values[5 - 1].clone()).unwrap();
         assert!(mt
-            .consistency_proof(&full_root_hash, 8, &proofs_for_5)
+            .consistency_proof(full_root_hash, 8, &proofs_for_5)
             .unwrap());
 
         //try to add 6th node
@@ -444,7 +438,7 @@ mod tests {
         //add 6th node
         mt.append(all_values[6 - 1].clone()).unwrap();
         assert!(mt
-            .consistency_proof(&full_root_hash, 8, &proofs_for_6)
+            .consistency_proof(full_root_hash, 8, &proofs_for_6)
             .unwrap());
 
         //try to add 7th node
@@ -461,7 +455,7 @@ mod tests {
         //add 7th node
         mt.append(all_values[7 - 1].clone()).unwrap();
         assert!(mt
-            .consistency_proof(&full_root_hash, 8, &proofs_for_7)
+            .consistency_proof(full_root_hash, 8, &proofs_for_7)
             .unwrap());
 
         //try to add 8th node, empty proof
@@ -469,7 +463,7 @@ mod tests {
         //add 7th node
         mt.append(all_values[8 - 1].clone()).unwrap();
         assert!(mt
-            .consistency_proof(&full_root_hash, 8, &proofs_for_8)
+            .consistency_proof(full_root_hash, 8, &proofs_for_8)
             .unwrap());
     }
 

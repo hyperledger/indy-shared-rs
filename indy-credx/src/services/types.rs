@@ -27,7 +27,7 @@ use crate::anoncreds_clsignatures::{RevocationRegistry as CryptoRevocationRegist
 use crate::error::Error;
 use crate::services::helpers::encode_credential_attribute;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CredentialDefinitionConfig {
     pub support_revocation: bool,
 }
@@ -35,14 +35,6 @@ pub struct CredentialDefinitionConfig {
 impl CredentialDefinitionConfig {
     pub fn new(support_revocation: bool) -> Self {
         Self { support_revocation }
-    }
-}
-
-impl Default for CredentialDefinitionConfig {
-    fn default() -> Self {
-        Self {
-            support_revocation: false,
-        }
     }
 }
 
@@ -81,9 +73,9 @@ impl MakeCredentialValues {
     }
 }
 
-impl Into<CredentialValues> for MakeCredentialValues {
-    fn into(self) -> CredentialValues {
-        self.0
+impl From<MakeCredentialValues> for CredentialValues {
+    fn from(val: MakeCredentialValues) -> CredentialValues {
+        val.0
     }
 }
 

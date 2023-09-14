@@ -1,4 +1,5 @@
 use std::os::raw::c_char;
+use std::str::FromStr;
 
 use ffi_support::{rust_string_to_c, FfiStr};
 use indy_data_types::Qualifiable;

@@ -14,7 +14,7 @@ use crate::anoncreds_clsignatures::{
 use crate::error::Result;
 
 pub fn attr_common_view(attr: &str) -> String {
-    attr.replace(" ", "").to_lowercase()
+    attr.replace(' ', "").to_lowercase()
 }
 
 pub fn build_credential_schema(attrs: &HashSet<String>) -> Result<CredentialSchema> {

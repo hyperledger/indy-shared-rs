@@ -19,7 +19,7 @@ pub(crate) static FFI_OBJECTS: Lazy<Mutex<BTreeMap<ObjectHandle, IndyObject>>> =
 
 static FFI_OBJECT_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct ObjectHandle(pub usize);
 
@@ -71,12 +71,6 @@ impl ObjectHandle {
     }
 }
 
-impl Default for ObjectHandle {
-    fn default() -> Self {
-        Self(0)
-    }
-}
-
 impl std::fmt::Display for ObjectHandle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}({})", stringify!($newtype), self.0)
@@ -112,6 +106,7 @@ pub(crate) struct IndyObject(Arc<dyn AnyIndyObject>);
 
 impl IndyObject {
     pub fn new<O: AnyIndyObject + 'static>(value: O) -> Self {
+        assert!(std::mem::size_of::<O>() != 0);
         Self(Arc::new(value))
     }
 
@@ -135,6 +130,10 @@ impl IndyObject {
 
 impl PartialEq for IndyObject {
     fn eq(&self, other: &IndyObject) -> bool {
+        #[allow(clippy::vtable_address_comparisons)]
+        // this is allowed only because we create all such objects
+        // in one place (the `new` method) and ensure they are not
+        // zero-sized.
         Arc::ptr_eq(&self.0, &other.0)
     }
 }
@@ -252,7 +251,7 @@ pub(crate) struct IndyObjectList(Vec<IndyObject>);
 impl IndyObjectList {
     pub fn load(handles: &[ObjectHandle]) -> Result<Self> {
         let loaded = handles
-            .into_iter()
+            .iter()
             .map(ObjectHandle::load)
             .collect::<Result<_>>()?;
         Ok(Self(loaded))

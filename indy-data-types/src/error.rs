@@ -78,9 +78,9 @@ macro_rules! define_error {
             }
         }
 
-        impl Into<String> for $name {
-            fn into(self) -> String {
-                self.to_string()
+        impl From<$name> for String {
+            fn from(val: $name) -> String {
+                val.to_string()
             }
         }
 

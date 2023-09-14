@@ -49,7 +49,7 @@ impl Nonce {
             return Err("Invalid bignum: empty value".into());
         }
         for c in strval.chars() {
-            if c < '0' || c > '9' {
+            if !c.is_ascii_digit() {
                 return Err("Invalid bignum value".into());
             }
         }
@@ -176,28 +176,28 @@ impl<'a> Deserialize<'a> for Nonce {
             where
                 E: serde::de::Error,
             {
-                Ok(Nonce::try_from(value).map_err(E::custom)?)
+                Nonce::try_from(value).map_err(E::custom)
             }
 
             fn visit_u64<E>(self, value: u64) -> Result<Nonce, E>
             where
                 E: serde::de::Error,
             {
-                Ok(Nonce::try_from(value).map_err(E::custom)?)
+                Nonce::try_from(value).map_err(E::custom)
             }
 
             fn visit_u128<E>(self, value: u128) -> Result<Nonce, E>
             where
                 E: serde::de::Error,
             {
-                Ok(Nonce::try_from(value).map_err(E::custom)?)
+                Nonce::try_from(value).map_err(E::custom)
             }
 
             fn visit_str<E>(self, value: &str) -> Result<Nonce, E>
             where
                 E: serde::de::Error,
             {
-                Ok(Nonce::from_dec(value).map_err(E::custom)?)
+                Nonce::from_dec(value).map_err(E::custom)
             }
         }
 

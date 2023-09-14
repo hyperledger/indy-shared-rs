@@ -18,7 +18,7 @@ impl CredentialDefinitionId {
         tag: &str,
     ) -> CredentialDefinitionId {
         let tag = if tag.is_empty() {
-            format!("")
+            String::new()
         } else {
             format!("{}{}", DELIMITER, tag)
         };

@@ -218,6 +218,7 @@ pub extern "C" fn credx_verify_presentation_legacy(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn _credx_verify_presentation(
     presentation: ObjectHandle,
     pres_req: ObjectHandle,

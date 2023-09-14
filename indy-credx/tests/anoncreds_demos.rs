@@ -16,8 +16,8 @@ use self::utils::anoncreds::{IssuerWallet, ProverWallet};
 
 mod utils;
 
-pub static GVT_SCHEMA_NAME: &'static str = "gvt";
-pub static GVT_SCHEMA_ATTRIBUTES: &[&'static str; 4] = &["name", "age", "sex", "height"];
+pub static GVT_SCHEMA_NAME: &str = "gvt";
+pub static GVT_SCHEMA_ATTRIBUTES: &[&str; 4] = &["name", "age", "sex", "height"];
 
 #[test]
 fn anoncreds_works_for_single_issuer_single_prover() {
@@ -56,7 +56,7 @@ fn anoncreds_works_for_single_issuer_single_prover() {
     // Issuer creates a Credential Offer
     let cred_offer = issuer::create_credential_offer(
         gvt_schema.id(),
-        &gvt_cred_def,
+        gvt_cred_def,
         &issuer_wallet.cred_defs[0].key_proof,
     )
     .expect("Error creating credential offer");
@@ -64,7 +64,7 @@ fn anoncreds_works_for_single_issuer_single_prover() {
     // Prover creates a Credential Request
     let (cred_request, cred_request_metadata) = prover::create_credential_request(
         &prover_wallet.did,
-        &*gvt_cred_def,
+        gvt_cred_def,
         &prover_wallet.link_secret,
         "default",
         &cred_offer,
@@ -86,7 +86,7 @@ fn anoncreds_works_for_single_issuer_single_prover() {
         .add_raw("age", "28")
         .expect("Error encoding attribute");
     let (issue_cred, _, _) = issuer::create_credential(
-        &*gvt_cred_def,
+        gvt_cred_def,
         &issuer_wallet.cred_defs[0].private,
         &cred_offer,
         &cred_request,
@@ -101,7 +101,7 @@ fn anoncreds_works_for_single_issuer_single_prover() {
         &mut recv_cred,
         &cred_request_metadata,
         &prover_wallet.link_secret,
-        &*gvt_cred_def,
+        gvt_cred_def,
         None,
     )
     .expect("Error processing credential");
@@ -154,7 +154,7 @@ fn anoncreds_works_for_single_issuer_single_prover() {
     schemas.insert(gvt_schema.id().clone(), &gvt_schema);
 
     let mut cred_defs = HashMap::new();
-    cred_defs.insert(gvt_cred_def.id().clone(), &*gvt_cred_def);
+    cred_defs.insert(gvt_cred_def.id().clone(), gvt_cred_def);
 
     let presentation = prover::create_presentation(
         &pres_request,
@@ -254,7 +254,7 @@ fn anoncreds_works_for_single_issuer_single_prover_unrevoked() {
     let (rev_reg_def, rev_reg_def_private, rev_reg, rev_reg_delta) =
         issuer::create_revocation_registry(
             &issuer_wallet.did,
-            &gvt_cred_def,
+            gvt_cred_def,
             "tag",
             RegistryType::CL_ACCUM,
             IssuanceType::ISSUANCE_BY_DEFAULT,
@@ -271,7 +271,7 @@ fn anoncreds_works_for_single_issuer_single_prover_unrevoked() {
     // Issuer creates a Credential Offer
     let cred_offer = issuer::create_credential_offer(
         gvt_schema.id(),
-        &gvt_cred_def,
+        gvt_cred_def,
         &issuer_wallet.cred_defs[0].key_proof,
     )
     .expect("Error creating credential offer");
@@ -279,7 +279,7 @@ fn anoncreds_works_for_single_issuer_single_prover_unrevoked() {
     // Prover creates a Credential Request
     let (cred_request, cred_request_metadata) = prover::create_credential_request(
         &prover_wallet.did,
-        &gvt_cred_def,
+        gvt_cred_def,
         &prover_wallet.link_secret,
         "default",
         &cred_offer,
@@ -301,7 +301,7 @@ fn anoncreds_works_for_single_issuer_single_prover_unrevoked() {
         .add_raw("age", "28")
         .expect("Error encoding attribute");
     let (issue_cred, _rev_reg, _delta) = issuer::create_credential(
-        &*gvt_cred_def,
+        gvt_cred_def,
         &issuer_wallet.cred_defs[0].private,
         &cred_offer,
         &cred_request,
@@ -322,7 +322,7 @@ fn anoncreds_works_for_single_issuer_single_prover_unrevoked() {
         &mut recv_cred,
         &cred_request_metadata,
         &prover_wallet.link_secret,
-        &*gvt_cred_def,
+        gvt_cred_def,
         Some(&rev_reg_def),
     )
     .expect("Error processing credential");
@@ -354,7 +354,7 @@ fn anoncreds_works_for_single_issuer_single_prover_unrevoked() {
     .expect("Error creating proof request");
 
     // Prover creates revocation state
-    let tails_reader = TailsFileReader::new(&tails_path);
+    let tails_reader = TailsFileReader::new(tails_path);
     let rev_state = prover::create_or_update_revocation_state(
         tails_reader,
         &rev_reg_def,
@@ -387,7 +387,7 @@ fn anoncreds_works_for_single_issuer_single_prover_unrevoked() {
     schemas.insert(gvt_schema.id().clone(), &gvt_schema);
 
     let mut cred_defs = HashMap::new();
-    cred_defs.insert(gvt_cred_def.id().clone(), &*gvt_cred_def);
+    cred_defs.insert(gvt_cred_def.id().clone(), gvt_cred_def);
 
     let presentation = prover::create_presentation(
         &pres_request,
