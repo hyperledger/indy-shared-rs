@@ -56,6 +56,9 @@ jobs:
       - name: Cargo check
         run: cargo check --workspace --features vendored
 
+      - name: Cargo check no default features
+        run: cargo check --package indy-data-types --no-default-features
+
       - if: ${{ runner.os == 'Linux' }}
         name: Pre-install cross
         run: |
