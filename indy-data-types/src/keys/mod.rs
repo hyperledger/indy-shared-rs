@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use std::str::FromStr;
 
 #[cfg(feature = "ed25519")]
-use curve25519_dalek::edwards::CompressedEdwardsY;
+use curve25519_dalek::{edwards::CompressedEdwardsY, scalar::clamp_integer};
 #[cfg(feature = "ed25519")]
 use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
 #[cfg(feature = "ed25519")]
@@ -77,7 +77,7 @@ impl PrivateKey {
             KeyType::ED25519 => {
                 let mut hash = sha2::Sha512::digest(&self.key[..32]);
                 let x_sk =
-                    x25519_dalek::StaticSecret::from(<[u8; 32]>::try_from(&hash[..32]).unwrap());
+                    x25519_dalek::StaticSecret::from(clamp_integer(hash[..32].try_into().unwrap()));
                 hash.zeroize();
                 Ok(Self::new(x_sk.to_bytes(), Some(KeyType::X25519)))
             }
