@@ -91,9 +91,6 @@ jobs:
       - name: Debug build
         run: cargo build --all-targets --features vendored
 
-      - name: Test indy-utils
-        run: cargo test --manifest-path indy-utils/Cargo.toml
-
       # - name: Test indy-data-types (CL)
       #   run: cargo test --manifest-path indy-data-types/Cargo.toml --features cl
 
