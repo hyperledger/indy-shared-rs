@@ -76,26 +76,16 @@ pub extern "C" fn credx_create_presentation(
             ));
         }
 
-        let entries = {
-            let credentials = credentials.as_slice();
-            credentials.into_iter().try_fold(
-                Vec::with_capacity(credentials.len()),
-                |mut r, ffi_entry| {
-                    r.push(ffi_entry.load()?);
-                    Result::Ok(r)
-                },
-            )?
-        };
-
-        let schemas = IndyObjectList::load(schemas.as_slice())?;
-        let cred_defs = IndyObjectList::load(cred_defs.as_slice())?;
+        let entries = credentials.try_collect(|entry| entry.load())?;
+        let schemas = IndyObjectList::load(schemas.as_slice()?)?;
+        let cred_defs = IndyObjectList::load(cred_defs.as_slice()?)?;
 
         let self_attested = if !self_attest_names.is_empty() {
             let mut self_attested = HashMap::new();
             for (name, raw) in self_attest_names
-                .as_slice()
-                .into_iter()
-                .zip(self_attest_values.as_slice())
+                .as_slice()?
+                .iter()
+                .zip(self_attest_values.as_slice()?)
             {
                 let name = name
                     .as_opt_str()
@@ -125,7 +115,7 @@ pub extern "C" fn credx_create_presentation(
                     .transpose()?,
             );
 
-            for prove in credentials_prove.as_slice() {
+            for prove in credentials_prove.as_slice()? {
                 if prove.entry_idx < 0 {
                     return Err(err_msg!("Invalid credential index"));
                 }
@@ -239,19 +229,10 @@ fn _credx_verify_presentation(
     result_p: *mut i8,
 ) -> ErrorCode {
     catch_error(|| {
-        let schemas = IndyObjectList::load(schemas.as_slice())?;
-        let cred_defs = IndyObjectList::load(cred_defs.as_slice())?;
-        let rev_reg_defs = IndyObjectList::load(rev_reg_defs.as_slice())?;
-        let rev_reg_entries = {
-            let entries = rev_reg_entries.as_slice();
-            entries.into_iter().try_fold(
-                Vec::with_capacity(entries.len()),
-                |mut r, ffi_entry| {
-                    r.push(ffi_entry.load()?);
-                    Result::Ok(r)
-                },
-            )?
-        };
+        let schemas = IndyObjectList::load(schemas.as_slice()?)?;
+        let cred_defs = IndyObjectList::load(cred_defs.as_slice()?)?;
+        let rev_reg_defs = IndyObjectList::load(rev_reg_defs.as_slice()?)?;
+        let rev_reg_entries = rev_reg_entries.try_collect(|entry| entry.load())?;
         let mut rev_regs = HashMap::new();
         for (idx, entry, timestamp) in rev_reg_entries.iter() {
             if *idx > rev_reg_defs.len() {

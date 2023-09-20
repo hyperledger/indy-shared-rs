@@ -16,7 +16,6 @@ from ctypes import (
     c_char_p,
     c_int8,
     c_int64,
-    c_size_t,
     c_ubyte,
     pointer,
 )
@@ -230,7 +229,7 @@ class StrBuffer(Structure):
 
 class FfiObjectHandleList(Structure):
     _fields_ = [
-        ("count", c_size_t),
+        ("count", c_int64),
         ("data", POINTER(ObjectHandle)),
     ]
 
@@ -246,7 +245,7 @@ class FfiObjectHandleList(Structure):
 
 class FfiIntList(Structure):
     _fields_ = [
-        ("count", c_size_t),
+        ("count", c_int64),
         ("data", POINTER(c_int64)),
     ]
 
@@ -262,7 +261,7 @@ class FfiIntList(Structure):
 
 class FfiStrList(Structure):
     _fields_ = [
-        ("count", c_size_t),
+        ("count", c_int64),
         ("data", POINTER(c_char_p)),
     ]
 
@@ -796,7 +795,9 @@ def verify_presentation(
         entry_list.count = len(rev_regs)
         entry_list.data = (RevocationEntry * entry_list.count)(*rev_regs)
     do_call(
-        "credx_verify_presentation_legacy" if accept_legacy_revocation else "credx_verify_presentation",
+        "credx_verify_presentation_legacy"
+        if accept_legacy_revocation
+        else "credx_verify_presentation",
         presentation,
         pres_req,
         FfiObjectHandleList.create(schemas),

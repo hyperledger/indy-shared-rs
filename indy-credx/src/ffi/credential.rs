@@ -70,13 +70,13 @@ pub extern "C" fn credx_create_credential(
                 "Mismatch between length of attribute names and raw values"
             ));
         }
-        let enc_values = attr_enc_values.as_slice();
+        let enc_values = attr_enc_values.as_slice()?;
         let mut cred_values = MakeCredentialValues::default();
-        let mut attr_idx = 0;
-        for (name, raw) in attr_names
-            .as_slice()
-            .into_iter()
-            .zip(attr_raw_values.as_slice())
+        for (attr_idx, (name, raw)) in attr_names
+            .as_slice()?
+            .iter()
+            .zip(attr_raw_values.as_slice()?)
+            .enumerate()
         {
             let name = name
                 .as_opt_str()
@@ -96,12 +96,11 @@ pub extern "C" fn credx_create_credential(
             } else {
                 cred_values.add_raw(name, raw)?;
             }
-            attr_idx += 1;
         }
         let revocation_config = if !revocation.is_null() {
             let revocation = unsafe { &*revocation };
             let mut reg_used = HashSet::new();
-            for reg_idx in revocation.reg_used.as_slice() {
+            for reg_idx in revocation.reg_used.as_slice()? {
                 reg_used.insert(
                     (*reg_idx)
                         .try_into()
@@ -157,7 +156,7 @@ pub extern "C" fn credx_encode_credential_attributes(
 ) -> ErrorCode {
     catch_error(|| {
         let mut result = String::new();
-        for raw_val in attr_raw_values.as_slice() {
+        for raw_val in attr_raw_values.as_slice()? {
             let enc_val = encode_credential_attribute(
                 raw_val
                     .as_opt_str()

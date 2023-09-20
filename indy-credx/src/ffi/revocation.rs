@@ -99,8 +99,8 @@ pub extern "C" fn credx_update_revocation_registry(
     catch_error(|| {
         check_useful_c_ptr!(rev_reg_p);
         check_useful_c_ptr!(rev_reg_delta_p);
-        let issued = registry_indices_to_set(issued.as_slice().into_iter().cloned())?;
-        let revoked = registry_indices_to_set(revoked.as_slice().into_iter().cloned())?;
+        let issued = registry_indices_to_set(issued.as_slice()?.iter().cloned())?;
+        let revoked = registry_indices_to_set(revoked.as_slice()?.iter().cloned())?;
         let (rev_reg, rev_reg_delta) = update_revocation_registry(
             cred_def.load()?.cast_ref()?,
             rev_reg_def.load()?.cast_ref()?,
