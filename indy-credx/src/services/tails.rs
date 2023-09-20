@@ -1,7 +1,7 @@
 use std::cell::{RefCell, RefMut};
 use std::fmt::Debug;
 use std::fs::File;
-use std::io::{self, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
+use std::io::{self, BufReader, BufWriter, Read, Seek, Write};
 use std::path::{Path, PathBuf};
 
 use indy_utils::base58;
@@ -135,17 +135,17 @@ impl TailsWriter for TailsFileWriter {
         let mut buf = BufWriter::new(file);
         let mut hasher = Sha256::default();
         let version = &[0u8, 2u8];
-        buf.write(version)?;
+        buf.write_all(version)?;
         hasher.update(version);
         while let Some(tail) = generator.try_next()? {
             let tail_bytes = tail.to_bytes()?;
-            buf.write(&tail_bytes)?;
+            buf.write_all(&tail_bytes)?;
             hasher.update(&tail_bytes);
         }
         let mut file = buf
             .into_inner()
             .map_err(|e| err_msg!("Error flushing output file: {e}"))?;
-        let tails_size = file.seek(SeekFrom::Current(0))?;
+        let tails_size = file.stream_position()?;
         let hash = base58::encode(hasher.finalize());
         let target_path = self.root_path.join(&hash);
         drop(file);

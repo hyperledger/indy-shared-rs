@@ -11,7 +11,7 @@ use once_cell::sync::Lazy;
 static LAST_ERROR: Lazy<RwLock<Option<Error>>> = Lazy::new(|| RwLock::new(None));
 
 #[derive(Debug, PartialEq, Copy, Clone, Serialize)]
-#[repr(usize)]
+#[repr(i64)]
 pub enum ErrorCode {
     Success = 0,
     Input = 1,

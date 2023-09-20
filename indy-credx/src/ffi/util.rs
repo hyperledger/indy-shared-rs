@@ -8,29 +8,26 @@ use crate::error::Result;
 #[derive(Debug)]
 #[repr(C)]
 pub struct FfiList<'a, T> {
-    count: usize,
+    count: i64,
     data: *const T,
     _pd: PhantomData<&'a ()>,
 }
 
 impl<'a, T> FfiList<'a, T> {
     #[inline]
-    pub fn as_slice(&self) -> &[T] {
-        if self.data.is_null() {
-            &[]
+    pub fn as_slice(&self) -> Result<&[T]> {
+        if self.data.is_null() || self.count == 0 {
+            Ok(&[])
+        } else if self.count < 0 {
+            return Err(err_msg!(Input, "Invalid index for result set"));
         } else {
-            unsafe { slice::from_raw_parts(self.data, self.count) }
+            Ok(unsafe { slice::from_raw_parts(self.data, self.count as usize) })
         }
     }
 
     #[inline]
-    pub fn try_collect<R>(&self, mut f: impl FnMut(&T) -> Result<R>) -> Result<Vec<R>> {
-        self.as_slice()
-            .into_iter()
-            .try_fold(Vec::with_capacity(self.len()), |mut rs, v| {
-                rs.push(f(v)?);
-                Ok(rs)
-            })
+    pub fn try_collect<R>(&self, f: impl FnMut(&T) -> Result<R>) -> Result<Vec<R>> {
+        self.as_slice()?.iter().map(f).collect()
     }
 
     #[inline]
@@ -39,7 +36,7 @@ impl<'a, T> FfiList<'a, T> {
     }
 
     #[inline]
-    pub fn len(&self) -> usize {
+    pub fn len(&self) -> i64 {
         if self.data.is_null() {
             0
         } else {
