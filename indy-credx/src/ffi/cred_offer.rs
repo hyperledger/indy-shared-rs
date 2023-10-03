@@ -1,5 +1,5 @@
 use ffi_support::FfiStr;
-use indy_utils::Qualifiable;
+use indy_data_types::Qualifiable;
 
 use super::error::{catch_error, ErrorCode};
 use super::object::ObjectHandle;

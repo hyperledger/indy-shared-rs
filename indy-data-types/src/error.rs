@@ -13,10 +13,12 @@ macro_rules! define_error {
         }
 
         impl $name {
+            #[allow(unused)]
             pub fn from_msg<T: Into<String>>(msg: T) -> Self {
                 Self::from(msg.into())
             }
 
+            #[allow(unused)]
             pub fn from_err<E>(err: E) -> Self
             where
                 E: StdError + Send + Sync + 'static,
@@ -76,9 +78,9 @@ macro_rules! define_error {
             }
         }
 
-        impl Into<String> for $name {
-            fn into(self) -> String {
-                self.to_string()
+        impl From<$name> for String {
+            fn from(val: $name) -> String {
+                val.to_string()
             }
         }
 

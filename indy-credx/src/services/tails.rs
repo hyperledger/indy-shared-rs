@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Read, Seek, Write};
 use std::path::{Path, PathBuf};
 
-use indy_utils::base58;
+use indy_data_types::utils::base58;
 use rand::random;
 use sha2::{Digest, Sha256};
 

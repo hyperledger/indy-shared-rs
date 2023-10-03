@@ -1,6 +1,5 @@
 use crate::identifiers::schema::SchemaId;
-use crate::utils::Qualifiable;
-use crate::{Validatable, ValidationError};
+use crate::{Qualifiable, Validatable, ValidationError};
 
 use std::collections::HashSet;
 use std::iter::FromIterator;
@@ -55,7 +54,7 @@ pub struct SchemaV1 {
     pub seq_no: Option<u32>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AttributeNames(pub HashSet<String>);
 
@@ -87,9 +86,9 @@ impl From<HashSet<String>> for AttributeNames {
     }
 }
 
-impl Into<HashSet<String>> for AttributeNames {
-    fn into(self) -> HashSet<String> {
-        self.0
+impl From<AttributeNames> for HashSet<String> {
+    fn from(val: AttributeNames) -> HashSet<String> {
+        val.0
     }
 }
 

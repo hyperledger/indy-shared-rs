@@ -1,9 +1,10 @@
+use std::str::FromStr;
+
 #[cfg(any(feature = "cl", feature = "cl_native"))]
 use crate::anoncreds_clsignatures::CredentialPublicKey;
 use crate::identifiers::cred_def::CredentialDefinitionId;
 use crate::identifiers::schema::SchemaId;
-use crate::utils::Qualifiable;
-use crate::{ConversionError, Validatable, ValidationError};
+use crate::{ConversionError, Qualifiable, Validatable, ValidationError};
 
 pub const CL_SIGNATURE_TYPE: &str = "CL";
 
@@ -14,16 +15,20 @@ pub enum SignatureType {
 }
 
 impl SignatureType {
-    pub fn from_str(value: &str) -> Result<Self, ConversionError> {
-        match value {
-            CL_SIGNATURE_TYPE => Ok(Self::CL),
-            _ => Err(ConversionError::from_msg("Invalid signature type")),
-        }
-    }
-
     pub fn to_str(&self) -> &'static str {
         match *self {
             SignatureType::CL => CL_SIGNATURE_TYPE,
+        }
+    }
+}
+
+impl FromStr for SignatureType {
+    type Err = ConversionError;
+
+    fn from_str(value: &str) -> Result<Self, ConversionError> {
+        match value {
+            CL_SIGNATURE_TYPE => Ok(Self::CL),
+            _ => Err(ConversionError::from_msg("Invalid signature type")),
         }
     }
 }

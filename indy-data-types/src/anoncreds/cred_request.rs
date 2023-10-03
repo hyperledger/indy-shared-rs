@@ -1,8 +1,7 @@
 use super::nonce::Nonce;
+use crate::did::DidValue;
 use crate::identifiers::cred_def::CredentialDefinitionId;
-use crate::utils::Qualifiable;
-use crate::{Validatable, ValidationError};
-use indy_utils::did::DidValue;
+use crate::{Qualifiable, Validatable, ValidationError};
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]

@@ -1,6 +1,5 @@
-use crate::utils::Qualifiable;
+use crate::qualifiable::{qualifiable_type, Qualifiable};
 use crate::{Validatable, ValidationError};
-use indy_utils::qualifiable_type;
 
 qualifiable_type!(RichSchemaId, "A rich schema identifier");
 
@@ -8,14 +7,14 @@ impl RichSchemaId {
     pub const PREFIX: &'static str = "rich_schema";
     pub fn new(did_string: String) -> RichSchemaId {
         // ToDo: add RichSchema specific id forming if needed
-        return RichSchemaId(did_string);
+        RichSchemaId(did_string)
     }
 }
 
 impl Validatable for RichSchemaId {
     fn validate(&self) -> Result<(), ValidationError> {
         // ToDO: add RichSchema ID specific validation
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -39,7 +38,7 @@ mod tests {
 
     #[test]
     fn _validate_qualified_rs_id() {
-        assert_eq!(_rs_id_qualified().validate().unwrap(), ())
+        _rs_id_qualified().validate().unwrap();
     }
 
     // #[test]

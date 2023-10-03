@@ -2,7 +2,7 @@ use once_cell::sync::Lazy;
 
 use regex::Regex;
 
-use super::{invalid, Validatable, ValidationError};
+use crate::{invalid, Validatable, ValidationError};
 
 pub(crate) static REGEX: Lazy<Regex> =
     Lazy::new(|| Regex::new("^([a-z0-9]+):([a-z0-9]+):(.*)$").unwrap());
@@ -17,7 +17,7 @@ pub fn combine(prefix: &str, method: Option<&str>, entity: &str) -> String {
 
 /// Split a qualifiable identifier into its method and value components
 pub fn split<'a>(prefix: &str, val: &'a str) -> (Option<&'a str>, &'a str) {
-    match REGEX.captures(&val) {
+    match REGEX.captures(val) {
         None => (None, val),
         Some(caps) => {
             if caps.get(1).map(|m| m.as_str()) == Some(prefix) {
@@ -45,11 +45,11 @@ pub trait Qualifiable: From<String> + std::ops::Deref<Target = str> + Validatabl
         Self::from(combine(Self::prefix(), method, entity))
     }
 
-    fn split<'a>(&'a self) -> (Option<&'a str>, &'a str) {
+    fn split(&self) -> (Option<&str>, &str) {
         split(Self::prefix(), self.deref())
     }
 
-    fn get_method<'a>(&'a self) -> Option<&'a str> {
+    fn get_method(&self) -> Option<&str> {
         let (method, _rest) = self.split();
         method
     }
@@ -105,14 +105,12 @@ pub trait Qualifiable: From<String> + std::ops::Deref<Target = str> + Validatabl
 }
 
 /// Derive a new `Qualifiable` string type
-#[macro_export]
 macro_rules! qualifiable_type {
     ($newtype:ident, $doc:expr) => {
-        $crate::serde_derive_impl! {
-            #[doc=$doc]
-            #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-            pub struct $newtype(pub String);
-        }
+        #[doc=$doc]
+        #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+        #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+        pub struct $newtype(pub String);
 
         impl From<String> for $newtype {
             fn from(val: String) -> Self {
@@ -137,3 +135,5 @@ macro_rules! qualifiable_type {
         qualifiable_type!($newtype, "");
     };
 }
+
+pub(crate) use qualifiable_type;

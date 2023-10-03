@@ -1,8 +1,7 @@
 use super::schema::SchemaId;
-use crate::utils::{qualifiable, Qualifiable};
+use crate::did::DidValue;
+use crate::qualifiable::{self, qualifiable_type, Qualifiable};
 use crate::{Validatable, ValidationError};
-use indy_utils::did::DidValue;
-use indy_utils::qualifiable_type;
 
 use super::DELIMITER;
 
@@ -19,7 +18,7 @@ impl CredentialDefinitionId {
         tag: &str,
     ) -> CredentialDefinitionId {
         let tag = if tag.is_empty() {
-            format!("")
+            String::new()
         } else {
             format!("{}{}", DELIMITER, tag)
         };

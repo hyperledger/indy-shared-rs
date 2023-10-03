@@ -4,9 +4,10 @@ use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::ops::{Deref, DerefMut};
 use std::os::raw::c_char;
-use std::sync::{Arc, Mutex};
+use std::sync::{atomic::AtomicUsize, Arc, Mutex};
 
 use ffi_support::{rust_string_to_c, ByteBuffer};
+use indy_data_types::{Validatable, ValidationError};
 use once_cell::sync::Lazy;
 use serde::Serialize;
 
@@ -16,9 +17,17 @@ use crate::error::Result;
 pub(crate) static FFI_OBJECTS: Lazy<Mutex<BTreeMap<ObjectHandle, IndyObject>>> =
     Lazy::new(|| Mutex::new(BTreeMap::new()));
 
-indy_utils::new_handle_type!(ObjectHandle, FFI_OBJECT_COUNTER);
+static FFI_OBJECT_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct ObjectHandle(pub usize);
 
 impl ObjectHandle {
+    pub fn next() -> Self {
+        Self(FFI_OBJECT_COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1)
+    }
+
     pub(crate) fn create<O: AnyIndyObject + 'static>(value: O) -> Result<Self> {
         let handle = Self::next();
         FFI_OBJECTS
@@ -62,9 +71,32 @@ impl ObjectHandle {
     }
 }
 
-impl Default for ObjectHandle {
-    fn default() -> Self {
-        Self(0)
+impl std::fmt::Display for ObjectHandle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}({})", stringify!($newtype), self.0)
+    }
+}
+
+impl std::ops::Deref for ObjectHandle {
+    type Target = usize;
+    fn deref(&self) -> &usize {
+        &self.0
+    }
+}
+
+impl PartialEq<usize> for ObjectHandle {
+    fn eq(&self, other: &usize) -> bool {
+        self.0 == *other
+    }
+}
+
+impl Validatable for ObjectHandle {
+    fn validate(&self) -> std::result::Result<(), ValidationError> {
+        if **self == 0 {
+            Err("Invalid handle: zero".into())
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -74,6 +106,7 @@ pub(crate) struct IndyObject(Arc<dyn AnyIndyObject>);
 
 impl IndyObject {
     pub fn new<O: AnyIndyObject + 'static>(value: O) -> Self {
+        assert!(std::mem::size_of::<O>() != 0);
         Self(Arc::new(value))
     }
 
@@ -97,6 +130,10 @@ impl IndyObject {
 
 impl PartialEq for IndyObject {
     fn eq(&self, other: &IndyObject) -> bool {
+        #[allow(clippy::vtable_address_comparisons)]
+        // this is allowed only because we create all such objects
+        // in one place (the `new` method) and ensure they are not
+        // zero-sized.
         Arc::ptr_eq(&self.0, &other.0)
     }
 }
@@ -214,7 +251,7 @@ pub(crate) struct IndyObjectList(Vec<IndyObject>);
 impl IndyObjectList {
     pub fn load(handles: &[ObjectHandle]) -> Result<Self> {
         let loaded = handles
-            .into_iter()
+            .iter()
             .map(ObjectHandle::load)
             .collect::<Result<_>>()?;
         Ok(Self(loaded))

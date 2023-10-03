@@ -20,7 +20,7 @@ pub struct RSContent(pub String);
 impl Validatable for RSContent {
     fn validate(&self) -> Result<(), ValidationError> {
         // ToDo: Add JSON-LD validation if needed
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -59,7 +59,7 @@ impl Validatable for RichSchema {
         let _rs_type: RSType =
             serde_json::from_value(serde_json::value::Value::String(self.rs_type.clone()))
                 .map_err(|_err| _err.to_string())?;
-        return self.id.validate();
+        self.id.validate()
     }
 }
 

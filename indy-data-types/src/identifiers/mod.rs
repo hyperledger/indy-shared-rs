@@ -10,4 +10,4 @@ pub mod schema;
 pub mod rich_schema;
 
 /// The standard delimiter used in identifier strings
-pub const DELIMITER: &'static str = ":";
+pub const DELIMITER: &str = ":";

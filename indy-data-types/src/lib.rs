@@ -6,17 +6,21 @@ extern crate serde;
 #[macro_use]
 extern crate serde_json;
 
+mod error;
+
 #[macro_use]
-mod macros;
+mod validation;
 
-mod utils {
-    pub use indy_utils::base58;
-    pub use indy_utils::{qualifiable, Qualifiable};
-}
+pub mod did;
+pub mod keys;
+pub mod qualifiable;
+pub mod utils;
 
-pub use indy_utils::did;
-pub use indy_utils::keys;
-pub use indy_utils::{invalid, ConversionError, Validatable, ValidationError};
+pub use self::{
+    error::{ConversionError, ValidationError},
+    qualifiable::Qualifiable,
+    validation::Validatable,
+};
 
 #[cfg(any(feature = "cl", feature = "cl_native"))]
 pub use anoncreds_clsignatures;

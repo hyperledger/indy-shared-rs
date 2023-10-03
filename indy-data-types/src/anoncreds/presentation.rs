@@ -13,7 +13,7 @@ pub struct Presentation {
     pub identifiers: Vec<Identifier>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct RequestedProof {
     pub revealed_attrs: HashMap<String, RevealedAttributeInfo>,
@@ -26,18 +26,6 @@ pub struct RequestedProof {
     pub unrevealed_attrs: HashMap<String, SubProofReferent>,
     #[cfg_attr(feature = "serde", serde(default))]
     pub predicates: HashMap<String, SubProofReferent>,
-}
-
-impl Default for RequestedProof {
-    fn default() -> Self {
-        RequestedProof {
-            revealed_attrs: HashMap::new(),
-            revealed_attr_groups: HashMap::new(),
-            self_attested_attrs: HashMap::new(),
-            unrevealed_attrs: HashMap::new(),
-            predicates: HashMap::new(),
-        }
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]

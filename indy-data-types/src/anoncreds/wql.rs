@@ -198,9 +198,7 @@ mod serde_support {
             let v = JsonValue::deserialize(deserializer)?;
 
             match v {
-                JsonValue::Object(map) => {
-                    parse_query(map).map_err(|err| de::Error::missing_field(err))
-                }
+                JsonValue::Object(map) => parse_query(map).map_err(de::Error::missing_field),
                 JsonValue::Array(array) => {
                     // cast old restrictions format to wql
                     let mut res: Vec<JsonValue> = Vec::new();
@@ -210,7 +208,7 @@ mod serde_support {
                             .ok_or_else(|| de::Error::custom("Restriction is invalid"))?
                             .clone()
                             .into_iter()
-                            .filter(|&(_, ref v)| !v.is_null())
+                            .filter(|(_, v)| !v.is_null())
                             .collect();
 
                         if !sub_query.is_empty() {
@@ -221,7 +219,7 @@ mod serde_support {
                     let mut map = serde_json::Map::new();
                     map.insert("$or".to_string(), JsonValue::Array(res));
 
-                    parse_query(map).map_err(|err| de::Error::custom(err))
+                    parse_query(map).map_err(de::Error::custom)
                 }
                 _ => Err(de::Error::missing_field(
                     "Restriction must be either object or array",
@@ -341,7 +339,7 @@ mod serde_support {
             (_, JsonValue::Object(map)) => {
                 if map.len() == 1 {
                     let (operator_name, value) = map.into_iter().next().unwrap();
-                    parse_single_operator(operator_name, key, value).map(|operator| Some(operator))
+                    parse_single_operator(operator_name, key, value).map(Some)
                 } else {
                     Err("value must be JSON object of length 1")
                 }
@@ -2852,9 +2850,9 @@ mod tests {
 
     #[test]
     fn test_old_format_empty() {
-        let json = format!(r#"[]"#);
+        let json = r#"[]"#;
 
-        let query: Query = ::serde_json::from_str(&json).unwrap();
+        let query: Query = ::serde_json::from_str(json).unwrap();
 
         let expected = Query::And(vec![]);
 
@@ -2868,8 +2866,8 @@ mod tests {
         let value1 = _random_string(10);
 
         let json = json!(vec![
-            json ! ({name1.clone(): value1.clone()}),
-            json!({ name2.clone(): ::serde_json::Value::Null })
+            json!({ name1.clone(): value1 }),
+            json!({ name2: ::serde_json::Value::Null })
         ])
         .to_string();
 
@@ -2893,7 +2891,7 @@ mod tests {
     fn test_optimise_or() {
         let json = r#"[]"#;
 
-        let query: Query = ::serde_json::from_str(&json).unwrap();
+        let query: Query = ::serde_json::from_str(json).unwrap();
 
         assert_eq!(query.optimise(), None);
     }

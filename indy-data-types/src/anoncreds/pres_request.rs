@@ -13,9 +13,8 @@ use crate::did::DidValue;
 use crate::identifiers::cred_def::CredentialDefinitionId;
 use crate::identifiers::rev_reg::RevocationRegistryId;
 use crate::identifiers::schema::SchemaId;
-use crate::invalid;
-use crate::utils::{qualifiable, Qualifiable};
-use crate::{Validatable, ValidationError};
+use crate::qualifiable::{self, Qualifiable};
+use crate::{invalid, Validatable, ValidationError};
 
 #[derive(Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
@@ -43,7 +42,7 @@ pub enum PresentationRequestVersion {
 }
 
 impl PresentationRequest {
-    pub fn value<'a>(&'a self) -> &'a PresentationRequestPayload {
+    pub fn value(&self) -> &PresentationRequestPayload {
         match self {
             PresentationRequest::PresentationRequestV1(req) => req,
             PresentationRequest::PresentationRequestV2(req) => req,
@@ -228,7 +227,7 @@ impl Validatable for PresentationRequest {
             }
 
             if let Some(ref restrictions) = requested_attribute.restrictions {
-                _process_operator(&restrictions, &version)?;
+                _process_operator(restrictions, &version)?;
             }
         }
 
@@ -240,7 +239,7 @@ impl Validatable for PresentationRequest {
                 ));
             }
             if let Some(ref restrictions) = requested_predicate.restrictions {
-                _process_operator(&restrictions, &version)?;
+                _process_operator(restrictions, &version)?;
             }
         }
 
@@ -256,13 +255,13 @@ impl PresentationRequest {
                 requested_attribute.restrictions = requested_attribute
                     .restrictions
                     .as_mut()
-                    .map(|ref mut restrictions| _convert_query_to_unqualified(&restrictions));
+                    .map(|ref mut restrictions| _convert_query_to_unqualified(restrictions));
             }
             for (_, requested_predicate) in request.requested_predicates.iter_mut() {
                 requested_predicate.restrictions = requested_predicate
                     .restrictions
                     .as_mut()
-                    .map(|ref mut restrictions| _convert_query_to_unqualified(&restrictions));
+                    .map(|ref mut restrictions| _convert_query_to_unqualified(restrictions));
             }
         };
 
@@ -299,13 +298,13 @@ fn _convert_query_to_unqualified(query: &Query) -> Query {
         Query::And(ref queries) => Query::And(
             queries
                 .iter()
-                .map(|query| _convert_query_to_unqualified(query))
+                .map(_convert_query_to_unqualified)
                 .collect::<Vec<Query>>(),
         ),
         Query::Or(ref queries) => Query::Or(
             queries
                 .iter()
-                .map(|query| _convert_query_to_unqualified(query))
+                .map(_convert_query_to_unqualified)
                 .collect::<Vec<Query>>(),
         ),
         Query::Not(ref query) => _convert_query_to_unqualified(query),

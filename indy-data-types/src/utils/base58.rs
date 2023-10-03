@@ -1,6 +1,6 @@
 use bs58;
 
-use super::error::ConversionError;
+use crate::error::ConversionError;
 
 pub fn decode<T: AsRef<[u8]>>(val: T) -> Result<Vec<u8>, ConversionError> {
     Ok(bs58::decode(val)

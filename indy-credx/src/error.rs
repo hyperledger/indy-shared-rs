@@ -116,8 +116,8 @@ impl From<ErrorKind> for Error {
     }
 }
 
-impl From<indy_utils::ValidationError> for Error {
-    fn from(err: indy_utils::ValidationError) -> Self {
+impl From<indy_data_types::ValidationError> for Error {
+    fn from(err: indy_data_types::ValidationError) -> Self {
         Error::from_opt_msg(ErrorKind::Input, err.context)
     }
 }

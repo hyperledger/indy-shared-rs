@@ -4,10 +4,9 @@ use regex::Regex;
 
 use super::cred_def::CredentialDefinitionId;
 use super::DELIMITER;
-use crate::utils::{qualifiable, Qualifiable};
+use crate::did::DidValue;
+use crate::qualifiable::{self, qualifiable_type, Qualifiable};
 use crate::{Validatable, ValidationError};
-use indy_utils::did::DidValue;
-use indy_utils::qualifiable_type;
 
 static QUALIFIED_REV_REG_ID: Lazy<Regex> = Lazy::new(|| {
     Regex::new("(^revreg:(?P<method>[a-z0-9]+):)?(?P<did>.+):4:(?P<cred_def_id>.+):(?P<rev_reg_type>.+):(?P<tag>.+)$").unwrap()
@@ -45,15 +44,14 @@ impl RevocationRegistryId {
     }
 
     pub fn parts(&self) -> Option<(DidValue, CredentialDefinitionId, String, String)> {
-        match QUALIFIED_REV_REG_ID.captures(&self.0) {
-            Some(caps) => Some((
+        QUALIFIED_REV_REG_ID.captures(&self.0).map(|caps| {
+            (
                 DidValue(caps["did"].to_string()),
                 CredentialDefinitionId(caps["cred_def_id"].to_string()),
                 caps["rev_reg_type"].to_string(),
                 caps["tag"].to_string(),
-            )),
-            None => None,
-        }
+            )
+        })
     }
 }
 

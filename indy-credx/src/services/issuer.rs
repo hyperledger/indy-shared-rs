@@ -14,7 +14,7 @@ use indy_data_types::anoncreds::{
     },
     schema::SchemaV1,
 };
-use indy_utils::{Qualifiable, Validatable};
+use indy_data_types::{Qualifiable, Validatable};
 
 use super::tails::TailsWriter;
 
@@ -29,7 +29,7 @@ pub fn create_schema(
         origin_did, schema_name, schema_version, attr_names);
 
     origin_did.validate()?;
-    let schema_id = SchemaId::new(&origin_did, schema_name, schema_version);
+    let schema_id = SchemaId::new(origin_did, schema_name, schema_version);
     let schema = SchemaV1 {
         id: schema_id,
         name: schema_name.to_string(),
@@ -57,12 +57,12 @@ pub fn make_credential_definition_id(
     };
     let schema_infix_id = schema_seq_no
         .map(|n| SchemaId(n.to_string()))
-        .unwrap_or(schema_id.clone());
+        .unwrap_or(schema_id);
 
     Ok(CredentialDefinitionId::new(
         origin_did,
         &schema_infix_id,
-        &signature_type.to_str(),
+        signature_type.to_str(),
         tag,
     ))
 }
@@ -84,9 +84,7 @@ pub fn create_credential_definition(
         config
     );
 
-    let schema = match schema {
-        Schema::SchemaV1(s) => s,
-    };
+    let Schema::SchemaV1(schema) = schema;
     let cred_def_id =
         make_credential_definition_id(origin_did, &schema.id, schema.seq_no, tag, signature_type)?;
 
@@ -142,9 +140,7 @@ pub fn make_revocation_registry_id(
     tag: &str,
     rev_reg_type: RegistryType,
 ) -> Result<RevocationRegistryId> {
-    let cred_def = match cred_def {
-        CredentialDefinition::CredentialDefinitionV1(c) => c,
-    };
+    let CredentialDefinition::CredentialDefinitionV1(cred_def) = cred_def;
 
     let origin_did = match (origin_did.get_method(), cred_def.id.get_method()) {
         (None, Some(_)) => {
@@ -157,9 +153,9 @@ pub fn make_revocation_registry_id(
     };
 
     Ok(RevocationRegistryId::new(
-        &origin_did,
+        origin_did,
         &cred_def.id,
-        &rev_reg_type.to_str(),
+        rev_reg_type.to_str(),
         tag,
     ))
 }
@@ -186,9 +182,7 @@ where
 
     let rev_reg_id = make_revocation_registry_id(origin_did, cred_def, tag, rev_reg_type)?;
 
-    let cred_def = match cred_def {
-        CredentialDefinition::CredentialDefinitionV1(c) => c,
-    };
+    let CredentialDefinition::CredentialDefinitionV1(cred_def) = cred_def;
     let credential_pub_key = cred_def.get_public_key().map_err(err_map!(
         Unexpected,
         "Error fetching public key from credential definition"
@@ -211,13 +205,13 @@ where
         max_cred_num,
         issuance_type,
         public_keys: rev_keys_pub,
-        tails_location: tails_location.clone(),
+        tails_location,
         tails_hash,
     };
 
     let revoc_reg_def = RevocationRegistryDefinition::RevocationRegistryDefinitionV1(
         RevocationRegistryDefinitionV1 {
-            id: rev_reg_id.clone(),
+            id: rev_reg_id,
             revoc_def_type: rev_reg_type,
             tag: tag.to_string(),
             cred_def_id: cred_def.id.clone(),
@@ -260,9 +254,7 @@ pub fn update_revocation_registry(
             ))?
         }
     };
-    let rev_reg_def = match rev_reg_def {
-        RevocationRegistryDefinition::RevocationRegistryDefinitionV1(v1) => v1,
-    };
+    let RevocationRegistryDefinition::RevocationRegistryDefinitionV1(rev_reg_def) = rev_reg_def;
     let mut rev_reg = match rev_reg {
         RevocationRegistry::RevocationRegistryV1(v1) => v1.value.clone(),
     };
@@ -292,9 +284,7 @@ pub fn create_credential_offer(
 
     let nonce = Nonce::new().map_err(err_map!(Unexpected, "Error creating nonce"))?;
 
-    let cred_def = match cred_def {
-        CredentialDefinition::CredentialDefinitionV1(c) => c,
-    };
+    let CredentialDefinition::CredentialDefinitionV1(cred_def) = cred_def;
 
     let key_correctness_proof = correctness_proof
         .try_clone()
@@ -370,8 +360,8 @@ pub fn create_credential(
                 )?;
 
             let cred_rev_reg_id = match cred_offer.method_name.as_ref() {
-                Some(ref _method_name) => Some(reg_reg_id.to_unqualified()),
-                _ => Some(reg_reg_id.clone()),
+                Some(_method_name) => Some(reg_reg_id.to_unqualified()),
+                _ => Some(reg_reg_id),
             };
             (
                 credential_signature,

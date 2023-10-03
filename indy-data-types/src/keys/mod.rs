@@ -1,20 +1,19 @@
 #[cfg(feature = "ed25519")]
-use curve25519_dalek::edwards::CompressedEdwardsY;
+use std::convert::TryFrom;
+use std::str::FromStr;
+
 #[cfg(feature = "ed25519")]
-use ed25519_dalek::{ExpandedSecretKey, PublicKey, SecretKey, Signature};
+use curve25519_dalek::{edwards::CompressedEdwardsY, scalar::clamp_integer};
+#[cfg(feature = "ed25519")]
+use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
 #[cfg(feature = "ed25519")]
 use rand::{thread_rng, RngCore};
 #[cfg(feature = "ed25519")]
 use sha2::digest::Digest;
-
-#[cfg(feature = "ed25519")]
-use std::convert::TryFrom;
-
 use zeroize::Zeroize;
 
-use super::base58;
-use super::error::ConversionError;
-use super::{Validatable, ValidationError};
+use crate::utils::base58;
+use crate::{ConversionError, Validatable, ValidationError};
 
 mod types;
 pub use types::{KeyEncoding, KeyType};
@@ -27,14 +26,14 @@ pub fn build_full_verkey(dest: &str, key: &str) -> Result<EncodedVerKey, Convers
 /// A raw signing key used for generating transaction signatures
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PrivateKey {
-    pub key: Vec<u8>,
+    pub key: Box<[u8]>,
     pub alg: KeyType,
 }
 
 impl PrivateKey {
     pub fn new<K: AsRef<[u8]>>(key: K, alg: Option<KeyType>) -> Self {
         Self {
-            key: key.as_ref().to_vec(),
+            key: key.as_ref().into(),
             alg: alg.unwrap_or_default(),
         }
     }
@@ -54,12 +53,11 @@ impl PrivateKey {
 
     #[cfg(feature = "ed25519")]
     pub fn from_seed(seed: &[u8]) -> Result<Self, ConversionError> {
-        let sk = SecretKey::from_bytes(seed)
-            .map_err(|err| format!("Error creating signing key: {}", err))?;
-        let mut esk = [0u8; 64];
-        esk[..32].copy_from_slice(sk.as_bytes());
-        esk[32..].copy_from_slice(PublicKey::from(&sk).as_bytes());
-        Ok(Self::new(esk, Some(KeyType::ED25519)))
+        let sk = SigningKey::from_bytes(
+            seed.try_into()
+                .map_err(|_| "Invalid length for secret key")?,
+        );
+        Ok(Self::new(sk.to_keypair_bytes(), Some(KeyType::ED25519)))
     }
 
     pub fn public_key(&self) -> Result<VerKey, ConversionError> {
@@ -70,7 +68,7 @@ impl PrivateKey {
     }
 
     pub fn key_bytes(&self) -> Vec<u8> {
-        self.key.clone()
+        Vec::from(self.key.as_ref())
     }
 
     #[cfg(feature = "ed25519")]
@@ -79,9 +77,9 @@ impl PrivateKey {
             KeyType::ED25519 => {
                 let mut hash = sha2::Sha512::digest(&self.key[..32]);
                 let x_sk =
-                    x25519_dalek::StaticSecret::from(<[u8; 32]>::try_from(&hash[..32]).unwrap());
+                    x25519_dalek::StaticSecret::from(clamp_integer(hash[..32].try_into().unwrap()));
                 hash.zeroize();
-                Ok(Self::new(&x_sk.to_bytes(), Some(KeyType::X25519)))
+                Ok(Self::new(x_sk.to_bytes(), Some(KeyType::X25519)))
             }
             _ => Err("Unsupported key format for key exchange".into()),
         }
@@ -91,9 +89,8 @@ impl PrivateKey {
     pub fn sign<M: AsRef<[u8]>>(&self, message: M) -> Result<Vec<u8>, ConversionError> {
         match self.alg {
             KeyType::ED25519 => {
-                let esk = ExpandedSecretKey::from(&SecretKey::from_bytes(&self.key[..32]).unwrap());
-                let pk = PublicKey::from_bytes(&self.key[32..]).unwrap();
-                let sig = esk.sign(message.as_ref(), &pk);
+                let esk = SigningKey::from_keypair_bytes((&*self.key).try_into().unwrap()).unwrap();
+                let sig = esk.sign(message.as_ref());
                 Ok(sig.to_bytes().into())
             }
             _ => Err("Unsupported key format for signing".into()),
@@ -137,7 +134,7 @@ impl Validatable for PrivateKey {
 /// A raw verkey used in verifying signatures
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct VerKey {
-    pub key: Vec<u8>,
+    pub key: Box<[u8]>,
     pub alg: KeyType,
 }
 
@@ -145,7 +142,7 @@ impl VerKey {
     pub fn new<K: AsRef<[u8]>>(key: K, alg: Option<KeyType>) -> Self {
         let alg = alg.unwrap_or_default();
         Self {
-            key: key.as_ref().to_vec(),
+            key: key.as_ref().into(),
             alg,
         }
     }
@@ -169,17 +166,17 @@ impl VerKey {
     }
 
     pub fn key_bytes(&self) -> Vec<u8> {
-        self.key.clone()
+        Vec::from(self.key.as_ref())
     }
 
     #[cfg(feature = "ed25519")]
     pub fn key_exchange(&self) -> Result<Self, ConversionError> {
         match self.alg {
             KeyType::ED25519 => {
-                let vky = CompressedEdwardsY::from_slice(&self.key[..]);
+                let vky = CompressedEdwardsY::from_slice(&self.key).unwrap();
                 if let Some(x_vk) = vky.decompress() {
                     Ok(Self::new(
-                        x_vk.to_montgomery().as_bytes().to_vec(),
+                        x_vk.to_montgomery().as_bytes(),
                         Some(KeyType::X25519),
                     ))
                 } else {
@@ -198,7 +195,7 @@ impl VerKey {
     ) -> Result<bool, ConversionError> {
         match self.alg {
             KeyType::ED25519 => {
-                let vk = PublicKey::from_bytes(&self.key[..]).unwrap();
+                let vk = VerifyingKey::try_from(&*self.key).unwrap();
                 if let Ok(sig) = Signature::try_from(signature.as_ref()) {
                     Ok(vk.verify_strict(message.as_ref(), &sig).is_ok())
                 } else {
@@ -273,8 +270,8 @@ impl EncodedVerKey {
     }
 
     pub fn from_did_and_verkey(did: &str, key: &str) -> Result<Self, ConversionError> {
-        if key.chars().next() == Some('~') {
-            let mut vk_bytes = base58::decode(&key[1..])?;
+        if let Some(key) = key.strip_prefix('~') {
+            let mut vk_bytes = base58::decode(key)?;
             if vk_bytes.len() != 16 {
                 return Err("Expected 16-byte abbreviated verkey".into());
             }
@@ -284,7 +281,7 @@ impl EncodedVerKey {
             }
             did_bytes.append(&mut vk_bytes);
             Ok(Self::new(
-                &base58::encode(did_bytes),
+                base58::encode(did_bytes),
                 Some(KeyType::ED25519),
                 Some(KeyEncoding::BASE58),
             ))
@@ -327,10 +324,6 @@ impl EncodedVerKey {
         Self::from_str_qualified(key, None, None, None)
     }
 
-    pub fn from_str(key: &str) -> Result<Self, ConversionError> {
-        Self::from_str_qualified(key, None, None, None)
-    }
-
     pub fn from_str_qualified(
         key: &str,
         dest: Option<&str>,
@@ -348,13 +341,12 @@ impl EncodedVerKey {
             (key, alg)
         };
 
-        if key.starts_with('~') {
-            let dest =
-                unwrap_opt_or_return!(dest, Err("Destination required for short verkey".into()));
+        if let Some(key) = key.strip_prefix('~') {
+            let dest = dest.ok_or("Destination required for short verkey")?;
             let mut result = base58::decode(dest)?;
-            let mut end = base58::decode(&key[1..])?;
+            let mut end = base58::decode(key)?;
             result.append(&mut end);
-            Ok(Self::new(&base58::encode(result), alg, enc))
+            Ok(Self::new(base58::encode(result), alg, enc))
         } else {
             Ok(Self::new(key, alg, enc))
         }
@@ -423,6 +415,14 @@ impl std::fmt::Display for EncodedVerKey {
             self.long_form()
         };
         f.write_str(out.as_str())
+    }
+}
+
+impl FromStr for EncodedVerKey {
+    type Err = ConversionError;
+
+    fn from_str(key: &str) -> Result<Self, ConversionError> {
+        Self::from_str_qualified(key, None, None, None)
     }
 }
 
@@ -509,7 +509,7 @@ mod tests {
         const SEED: &[u8; 32] = b"aaaabbbbccccddddeeeeffffgggghhhh";
         let sk = PrivateKey::from_seed(&SEED[..]).unwrap();
         assert_eq!(
-            &sk.as_ref()[..],
+            sk.as_ref(),
             &[
                 97, 97, 97, 97, 98, 98, 98, 98, 99, 99, 99, 99, 100, 100, 100, 100, 101, 101, 101,
                 101, 102, 102, 102, 102, 103, 103, 103, 103, 104, 104, 104, 104, 113, 22, 13, 44,
@@ -519,7 +519,7 @@ mod tests {
         );
         let xk = sk.key_exchange().unwrap();
         assert_eq!(
-            &xk.as_ref(),
+            xk.as_ref(),
             &[
                 208, 235, 232, 147, 241, 214, 250, 182, 45, 157, 20, 202, 31, 184, 226, 115, 149,
                 82, 210, 89, 50, 100, 22, 67, 21, 8, 124, 198, 100, 252, 237, 107
@@ -532,11 +532,11 @@ mod tests {
     fn sign_and_verify() {
         let message = b"hello there";
         let sk = PrivateKey::generate(None).unwrap();
-        let sig = sk.sign(&message).unwrap();
+        let sig = sk.sign(message).unwrap();
         let vk = sk.public_key().unwrap();
-        assert!(vk.verify_signature(&message, &sig).unwrap());
-        assert!(vk.verify_signature(&message, &[]).is_err());
-        assert!(!vk.verify_signature(&"goodbye", &sig).unwrap());
+        assert!(vk.verify_signature(message, &sig).unwrap());
+        assert!(vk.verify_signature(message, b"").is_err());
+        assert!(!vk.verify_signature("goodbye", &sig).unwrap());
     }
 
     #[cfg(feature = "ed25519")]
@@ -548,8 +548,8 @@ mod tests {
         vk.validate().unwrap();
 
         let sk = PrivateKey::new(b"bad key", Some(KeyType::ED25519));
-        assert_eq!(sk.validate().is_ok(), false);
+        assert!(sk.validate().is_err());
         let vk = VerKey::new(b"bad key", Some(KeyType::ED25519));
-        assert_eq!(vk.validate().is_ok(), false);
+        assert!(vk.validate().is_err());
     }
 }
