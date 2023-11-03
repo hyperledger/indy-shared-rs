@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
 use once_cell::sync::Lazy;
@@ -26,7 +27,6 @@ pub struct Filter {
 
 static INTERNAL_TAG_MATCHER: Lazy<Regex> =
     Lazy::new(|| Regex::new("^attr::([^:]+)::(value|marker)$").unwrap());
-static ENCODED_ATTR_MATCHER: Lazy<Regex> = Lazy::new(|| Regex::new("^0+([0-9]+)$").unwrap());
 
 pub fn verify_presentation(
     presentation: &Presentation,
@@ -534,11 +534,10 @@ fn verify_revealed_attribute_values(
     Ok(())
 }
 
-fn normalize_encoded_attr(attr: &str) -> &str {
-    match ENCODED_ATTR_MATCHER.captures(attr) {
-        Some(m) => m.get(1).unwrap().as_str(),
-        None => attr,
-    }
+fn normalize_encoded_attr(attr: &str) -> Cow<'_, str> {
+    attr.parse::<i32>()
+        .map(|iattr| Cow::Owned(iattr.to_string()))
+        .unwrap_or_else(|_| Cow::Borrowed(attr))
 }
 
 fn verify_revealed_attribute_value(
@@ -1252,8 +1251,11 @@ mod tests {
         assert_eq!(normalize_encoded_attr(""), "");
         assert_eq!(normalize_encoded_attr("abc"), "abc");
         assert_eq!(normalize_encoded_attr("0"), "0");
+        assert_eq!(normalize_encoded_attr("000"), "0");
         assert_eq!(normalize_encoded_attr("01"), "1");
         assert_eq!(normalize_encoded_attr("01.0"), "01.0");
         assert_eq!(normalize_encoded_attr("0abc"), "0abc");
+        assert_eq!(normalize_encoded_attr("-100"), "-100");
+        assert_eq!(normalize_encoded_attr("-0100"), "-100");
     }
 }
