@@ -1,6 +1,6 @@
 [package]
 name = "indy-data-types"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["Hyperledger Indy Contributors <indy@lists.hyperledger.org>"]
 description = "Common data types for Hyperledger Indy (https://www.hyperledger.org/projects), which provides a distributed-ledger-based foundation for self-sovereign identity (https://sovrin.org)."
 edition = "2021"
@@ -27,7 +27,7 @@ serde_support = ["serde", "serde_json", "anoncreds-clsignatures?/serde"]
 vendored = ["anoncreds-clsignatures?/openssl_vendored"]
 
 [dependencies]
-anoncreds-clsignatures = { version = "0.2", optional = true }
+anoncreds-clsignatures = { version = "0.2.4", optional = true }
 bs58 = "0.5"
 curve25519-dalek = { version = "4.1", default-features = false, optional = true }
 ed25519-dalek = { version = "2.0", default-features = false, features = [
