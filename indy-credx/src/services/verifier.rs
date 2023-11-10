@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
 use once_cell::sync::Lazy;
@@ -533,12 +534,18 @@ fn verify_revealed_attribute_values(
     Ok(())
 }
 
+fn normalize_encoded_attr(attr: &str) -> Cow<'_, str> {
+    attr.parse::<i32>()
+        .map(|iattr| Cow::Owned(iattr.to_string()))
+        .unwrap_or_else(|_| Cow::Borrowed(attr))
+}
+
 fn verify_revealed_attribute_value(
     attr_name: &str,
     proof: &Presentation,
     attr_info: &RevealedAttributeInfo,
 ) -> Result<()> {
-    let reveal_attr_encoded = attr_info.encoded.trim_start_matches('0');
+    let reveal_attr_encoded = normalize_encoded_attr(&attr_info.encoded);
     let sub_proof_index = attr_info.sub_proof_index as usize;
 
     let crypto_proof_encoded = proof
@@ -1237,5 +1244,18 @@ mod tests {
         validate_timestamp(&_received(), "referent_2", &Some(_interval()), &None).unwrap_err();
         validate_timestamp(&_received(), "referent_2", &None, &Some(_interval())).unwrap_err();
         validate_timestamp(&_received(), "referent_3", &None, &Some(_interval())).unwrap_err();
+    }
+
+    #[test]
+    fn format_attribute() {
+        assert_eq!(normalize_encoded_attr(""), "");
+        assert_eq!(normalize_encoded_attr("abc"), "abc");
+        assert_eq!(normalize_encoded_attr("0"), "0");
+        assert_eq!(normalize_encoded_attr("000"), "0");
+        assert_eq!(normalize_encoded_attr("01"), "1");
+        assert_eq!(normalize_encoded_attr("01.0"), "01.0");
+        assert_eq!(normalize_encoded_attr("0abc"), "0abc");
+        assert_eq!(normalize_encoded_attr("-100"), "-100");
+        assert_eq!(normalize_encoded_attr("-0100"), "-100");
     }
 }
