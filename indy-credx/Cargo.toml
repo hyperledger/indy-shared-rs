@@ -9,7 +9,7 @@ readme = "../README.md"
 repository = "https://github.com/hyperledger/indy-shared-rs/"
 categories = ["authentication", "cryptography"]
 keywords = ["hyperledger", "indy", "ssi", "verifiable", "credentials"]
-rust-version = "1.63.0"
+rust-version = "1.70.0"
 
 [lib]
 name = "indy_credx"
