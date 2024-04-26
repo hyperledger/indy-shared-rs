@@ -27,7 +27,7 @@ serde_support = ["serde", "serde_json", "anoncreds-clsignatures?/serde"]
 vendored = ["anoncreds-clsignatures?/openssl_vendored"]
 
 [dependencies]
-anoncreds-clsignatures = { version = "0.2.4", optional = true }
+anoncreds-clsignatures = { version = "0.3.2", optional = true }
 bs58 = "0.5"
 curve25519-dalek = { version = "4.1", default-features = false, optional = true }
 ed25519-dalek = { version = "2.0", default-features = false, features = [
