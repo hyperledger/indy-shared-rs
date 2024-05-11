@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32228.343
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "indy-shared-rs-dotnet", "indy-shared-rs-dotnet\indy-shared-rs-dotnet.csproj", "{15E6B9A5-4719-4219-9EB7-B3A403939700}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "indy-shared-rs-dotnet-test", "indy-shared-rs-dotnet-test\indy-shared-rs-dotnet-test.csproj", "{A08B495F-F4ED-4BBC-AD2F-31880459791E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{15E6B9A5-4719-4219-9EB7-B3A403939700}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15E6B9A5-4719-4219-9EB7-B3A403939700}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15E6B9A5-4719-4219-9EB7-B3A403939700}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15E6B9A5-4719-4219-9EB7-B3A403939700}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A08B495F-F4ED-4BBC-AD2F-31880459791E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A08B495F-F4ED-4BBC-AD2F-31880459791E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A08B495F-F4ED-4BBC-AD2F-31880459791E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A08B495F-F4ED-4BBC-AD2F-31880459791E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {355F59C8-4277-4520-9499-3AE4336B2FF9}
+	EndGlobalSection
+EndGlobal
